@@ -1,0 +1,46 @@
+"C:/Users/fakel/Documents/Codex/tools/w64devkit/bin/gcc.exe" -std=c11 -Wall -Wextra -Werror -Wshadow -Wundef -pedantic -O1 -g -Iinclude -Itarget src/board_config.c src/calibration.c src/chassis_app.c src/console.c src/mecanum.c src/motor_uart.c src/remote_ps2.c src/safety.c tests/test_service.c -lm -o build/test_service.exe
+./build/test_core.exe
+PASS parser
+PASS mapping/commands
+PASS kinematics
+PASS safety
+PASS PS2
+PASS application
+PASS all: 129218 assertions (includes deterministic noise recovery)
+./build/test_startup.exe
+PASS production config stays stopped: upload=1 PS2_setup=1 max_poll_gap=27ms state=0
+PASS normal drive has no repeated setup: upload=1 PS2_setup=1 max_poll_gap=27ms state=1
+PASS motor starts late: upload=2 PS2_setup=1 max_poll_gap=27ms state=0
+PASS PS2 starts late: upload=1 PS2_setup=2 max_poll_gap=24ms state=0
+PASS both devices absent: upload=5 PS2_setup=5 max_poll_gap=33ms state=2
+PASS PS2 refuses analog mode: upload=1 PS2_setup=5 max_poll_gap=33ms state=2
+PASS motor restart with START held: upload=2 PS2_setup=1 max_poll_gap=27ms state=2
+PASS PS2 restart with START held: upload=1 PS2_setup=2 max_poll_gap=27ms state=2
+PASS motor restart then deliberate rearm: upload=2 PS2_setup=1 max_poll_gap=27ms state=1
+PASS PS2 restart then deliberate rearm: upload=1 PS2_setup=2 max_poll_gap=27ms state=1
+PASS UART error stays latched: upload=1 PS2_setup=1 max_poll_gap=27ms state=2
+PASS bad frame stays latched: upload=1 PS2_setup=1 max_poll_gap=27ms state=2
+PASS initial upload TX failure: upload=1 PS2_setup=1 max_poll_gap=26ms state=2
+PASS retry upload TX failure: upload=2 PS2_setup=1 max_poll_gap=27ms state=2
+PASS late devices across tick wrap: upload=2 PS2_setup=2 max_poll_gap=24ms state=0
+PASS console queries during drive: upload=1 PS2_setup=1 max_poll_gap=35ms state=1
+PASS console stop cannot rearm held START: upload=1 PS2_setup=1 max_poll_gap=27ms state=0
+PASS console one bounded calibration pulse: upload=1 PS2_setup=1 max_poll_gap=29ms state=0
+PASS console error cancels calibration: upload=1 PS2_setup=1 max_poll_gap=29ms state=0
+PASS console stale pulse is rejected: upload=1 PS2_setup=1 max_poll_gap=32ms state=0
+PASS console queries cannot starve control: upload=1 PS2_setup=1 max_poll_gap=27ms state=1
+PASS failed arm reply revokes calibration permission: upload=1 PS2_setup=1 max_poll_gap=45ms state=0
+PASS failed pulse reply cannot start a motor: upload=1 PS2_setup=1 max_poll_gap=48ms state=0
+PASS RX fault during PS2 poll cancels pending pulse: upload=1 PS2_setup=1 max_poll_gap=29ms state=0
+PASS RX fault during PS2 poll stops running pulse: upload=1 PS2_setup=1 max_poll_gap=29ms state=0
+PASS fault after calculation replaces pending PWM with zero: upload=1 PS2_setup=1 max_poll_gap=29ms state=0
+PASS console fault leaves PS2 driving under its own safety checks: upload=1 PS2_setup=1 max_poll_gap=27ms state=1
+PASS all startup/recovery scenarios: 27
+./build/test_service.exe
+PASS calibration lifecycle
+PASS calibration guards
+PASS mode switch and timer wrap
+PASS console queries and framing
+PASS console actions and stale commands
+PASS reply markers and longest payload
+PASS service: 510 assertions

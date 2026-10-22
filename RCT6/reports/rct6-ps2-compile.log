@@ -1,0 +1,3 @@
+make: Entering directory 'C:/Users/fakel/Documents/Codex/2026-10-21/g-g/outputs/RM_Car/RCT6'
+arm-none-eabi-gcc -mcpu=cortex-m3 -mthumb -DSTM32F103xE -DUSE_HAL_DRIVER -Iinclude -Itarget -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/CMSIS/Include -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -std=c11 -Og -g3 -Wall -Wextra -Werror -Wshadow -Wundef -ffunction-sections -fdata-sections -fno-common -DRM_PS2_WIRED=1 -c target/board_hal.c -o build/board_hal_ps2_check.o
+make: Leaving directory 'C:/Users/fakel/Documents/Codex/2026-10-21/g-g/outputs/RM_Car/RCT6'

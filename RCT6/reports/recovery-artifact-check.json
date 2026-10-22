@@ -1,0 +1,40 @@
+{
+  "review_date": "2026-10-22",
+  "existing_c_h_with_logic_changes": [
+    "src/remote_ps2.c",
+    "target/main.c"
+  ],
+  "existing_c_h_with_comments_only": [
+    "include/board_config.h",
+    "include/chassis_app.h",
+    "include/mecanum.h",
+    "include/motor_uart.h",
+    "include/remote_ps2.h",
+    "include/safety.h",
+    "src/board_config.c",
+    "src/chassis_app.c",
+    "src/mecanum.c",
+    "src/motor_uart.c",
+    "src/safety.c",
+    "target/board_hal.c",
+    "target/board_hal.h",
+    "target/interrupts.c",
+    "target/syscalls.c",
+    "tests/test_core.c"
+  ],
+  "new_test": "tests/test_startup.c",
+  "initial_stack": "0x2000c000",
+  "reset_vector": "0x8002af5",
+  "uart2_vector": "matched",
+  "systick_vector": "matched",
+  "hex_bin_equal": true,
+  "flash_bytes": 14892,
+  "ram_including_reserves_bytes": 8080,
+  "sha256": {
+    "rm_rct6.bin": "85ed62b70166ea02d2ba315a3ae746b06d213cf5a2214bb16d9a46e5a656dc6e",
+    "rm_rct6.elf": "dc501db8bf5802886ab8b47b28b9a24a87e0c68470c16a3541ba9cb86d8dd4c1",
+    "rm_rct6.hex": "51393164ac24aa1b957e70c86f4733ef5e156d80c279dc222d383746c7f39f0c"
+  },
+  "flashed": false,
+  "hardware_tested": false
+}

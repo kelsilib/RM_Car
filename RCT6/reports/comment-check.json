@@ -1,0 +1,31 @@
+{
+  "changed_c_h_files": [
+    "src\\board_config.c",
+    "src\\chassis_app.c",
+    "src\\mecanum.c",
+    "src\\motor_uart.c",
+    "src\\remote_ps2.c",
+    "src\\safety.c",
+    "include\\board_config.h",
+    "include\\chassis_app.h",
+    "include\\mecanum.h",
+    "include\\motor_uart.h",
+    "include\\remote_ps2.h",
+    "include\\safety.h",
+    "target\\board_hal.c",
+    "target\\board_hal.h",
+    "target\\interrupts.c",
+    "target\\main.c",
+    "target\\syscalls.c",
+    "tests\\test_core.c"
+  ],
+  "non_comment_tokens_unchanged_files": 19,
+  "firmware_bin_identical": true,
+  "firmware_bin_sha256": "12b54b7568dd1e66d4e60eb91eedf78523b2164977cc642c0bb76236c3410b45",
+  "host_test_groups_passed": 6,
+  "host_assertions_passed": 129218,
+  "arm_build_passed": true,
+  "compiler_linker_warnings": 0,
+  "flashed": false,
+  "hardware_tested": false
+}

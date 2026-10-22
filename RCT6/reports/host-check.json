@@ -1,0 +1,25 @@
+﻿{
+    "checked_at_utc":  "2026-10-22T08:06:18.3423784Z",
+    "tools_ready":  true,
+    "config_parsed":  true,
+    "firmware_hash_matches_last_verification":  true,
+    "stlink_serials":  [
+
+                       ],
+    "serial_ports":  [
+                         {
+                             "FriendlyName":  "蓝牙链接上的标准串行 (COM3)",
+                             "InstanceId":  "BTHENUM\\{00001101-0000-1000-8000-00805F9B34FB}_VID\u0026000102B0_PID\u00260000\\6\u00263410F3BE\u00260\u00262CBEEE85D29F_C00000000",
+                             "Status":  "OK"
+                         },
+                         {
+                             "FriendlyName":  "蓝牙链接上的标准串行 (COM4)",
+                             "InstanceId":  "BTHENUM\\{00001101-0000-1000-8000-00805F9B34FB}_LOCALMFG\u00260000\\6\u00263410F3BE\u00260\u0026000000000000_00000000",
+                             "Status":  "OK"
+                         }
+                     ],
+    "target_connected":  false,
+    "flashed":  false,
+    "hardware_tested":  false,
+    "note":  "Check只枚举USB和读取配置，不连接目标MCU。没有设备时也能完成工具检查。"
+}

@@ -1,0 +1,20 @@
+test_bad_frame_counter_must_stay_zero (__main__.LogChecks.test_bad_frame_counter_must_stay_zero) ... ok
+test_board_only_expected_inhibits (__main__.LogChecks.test_board_only_expected_inhibits) ... ok
+test_configuration_inhibit_cannot_be_bypassed (__main__.LogChecks.test_configuration_inhibit_cannot_be_bypassed) ... ok
+test_cut_off_or_unrecognized_status_is_rejected (__main__.LogChecks.test_cut_off_or_unrecognized_status_is_rejected) ... ok
+test_fault_bits_fail_the_check (__main__.LogChecks.test_fault_bits_fail_the_check) ... ok
+test_missing_boot_is_optional_and_can_be_required (__main__.LogChecks.test_missing_boot_is_optional_and_can_be_required) ... ok
+test_motor_can_become_ready_after_startup (__main__.LogChecks.test_motor_can_become_ready_after_startup) ... ok
+test_motor_seen_bit_and_inhibit_must_agree (__main__.LogChecks.test_motor_seen_bit_and_inhibit_must_agree) ... ok
+test_motor_timeout_is_detected (__main__.LogChecks.test_motor_timeout_is_detected) ... ok
+test_multiple_boots_fail_the_check (__main__.LogChecks.test_multiple_boots_fail_the_check) ... ok
+test_no_log_or_only_ok_is_not_success (__main__.LogChecks.test_no_log_or_only_ok_is_not_success) ... ok
+test_not_enough_status_samples (__main__.LogChecks.test_not_enough_status_samples) ... ok
+test_overflow_and_extremely_long_garbage_do_not_pass (__main__.LogChecks.test_overflow_and_extremely_long_garbage_do_not_pass) ... ok
+test_timestamp_prefixes_are_accepted (__main__.LogChecks.test_timestamp_prefixes_are_accepted) ... ok
+test_unexpected_arm_or_estop_is_rejected (__main__.LogChecks.test_unexpected_arm_or_estop_is_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.003s
+
+OK

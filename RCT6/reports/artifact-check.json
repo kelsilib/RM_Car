@@ -1,0 +1,15 @@
+{
+  "source_files_preserved": 159,
+  "initial_stack": "0x2000c000",
+  "reset_vector": "0x8002a35",
+  "uart2_vector": "matched",
+  "systick_vector": "matched",
+  "hex_bin_equal": true,
+  "sha256": {
+    "rm_rct6.bin": "12b54b7568dd1e66d4e60eb91eedf78523b2164977cc642c0bb76236c3410b45",
+    "rm_rct6.elf": "314f94568276c6e4dca5e0fd3e83f65c8d7164bd8fc556786100b4a622acae1a",
+    "rm_rct6.hex": "1f9838184578b2ca608b1f4896de6f64d932d6c076e0c1ea4dba0ce209819671"
+  },
+  "flashed": false,
+  "hardware_tested": false
+}

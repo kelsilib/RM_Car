@@ -1,0 +1,6 @@
+Exception: 
+Line |
+   2 |  … check.json; .\board.ps1 -Mode Command -Command "stop`ncal arm" *> rep …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Command需要-Command指定一行1～63字节ASCII指令，不能包含回车、换行或多条指令。
+PASS: multiline command rejected before opening a serial port.

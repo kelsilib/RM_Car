@@ -1,0 +1,2 @@
+ARM GCC -fanalyzer -c
+Analyzed 12 C files plus PS2 adapter; exit=0

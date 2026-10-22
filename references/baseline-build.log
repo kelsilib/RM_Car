@@ -1,0 +1,25 @@
+🔨 构建命令: D:\stm32\STM32CubeIDE_1.19.0\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.make.win32_2.2.0.202409170845\tools\bin\make.EXE -C C:\Users\fakel\Documents\Codex\2026-10-21\g-g\outputs\RM_Car -j 4
+
+📊 构建结果: ❌ Make 构建失败
+
+  构建命令: D:\stm32\STM32CubeIDE_1.19.0\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.make.win32_2.2.0.202409170845\tools\bin\make.EXE -C C:\Users\fakel\Documents\Codex\2026-10-21\g-g\outputs\RM_Car -j 4
+  构建目录: C:\Users\fakel\Documents\Codex\2026-10-21\g-g\outputs\RM_Car
+
+📝 证据:
+  构建失败输出（末尾）:
+  arm-none-eabi-gcc -c -mcpu=cortex-m3 -mthumb -DUSE_HAL_DRIVER -DSTM32F103xB -ICore/Inc -IBSP/Inc -IApp/Inc -IDrivers/STM32F1xx_HAL_Driver/Inc -IDrivers/CMSIS/Device/ST/STM32F1xx/Include -IDrivers/CMSIS/Include -Og -g3 -std=gnu11 -Wall -Wextra -Wshadow -Wundef -fdata-sections -ffunction-sections -fno-common -MMD -MP -MF"" -MT"" -Wa,-alms=build/encoder.lst BSP/Src/encoder.c -o build/encoder.o
+  make.EXE: Leaving directory 'C:/Users/fakel/Documents/Codex/2026-10-21/g-g/outputs/RM_Car'
+  
+  In file included from Core/Src/main.c:13:
+  Core/Inc/app_config.h:22:35: error: floating constant in preprocessor expression
+     22 | #define WHEEL_RADIUS_M            0.0765f
+        |                                   ^~~~~~~
+  Core/Inc/app_config.h:156:5: note: in expansion of macro 'WHEEL_RADIUS_M'
+    156 | #if WHEEL_RADIUS_M <= 0.0f
+        |     ^~~~~~~~~~~~~~
+  Core/Inc/app_config.h:156:23: error: floating constant in preprocessor expression
+    156 | #if WHEEL_RADIUS_M <= 0.0f
+        |                       ^~~~
+  Core/Inc/app_config.h:157:2: error: #error "WHEEL_RADIUS_M 蹇呴』澶т簬 0"
+
+  失败分类: project-config-error

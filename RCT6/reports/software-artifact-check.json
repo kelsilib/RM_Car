@@ -1,0 +1,18 @@
+{
+  "flash_bytes": 20352,
+  "ram_including_reserves_bytes": 9016,
+  "initial_stack": "0x2000c000",
+  "reset_vector": "0x8003a95",
+  "uart1_vector": "matched",
+  "uart2_vector": "matched",
+  "systick_vector": "matched",
+  "hex_bin_equal": true,
+  "scope": "artifact_structure_only",
+  "sha256": {
+    "rm_rct6.bin": "058bdbaad03d9eb6d691cef64dd9554e0b6ded23f350493c445a04ddd3cc146d",
+    "rm_rct6.elf": "c9b7af7527ac5b2476cce04cb75e7cc23511ee0f76fe430af2986b36348419ef",
+    "rm_rct6.hex": "14ef6aad95a720b6dee951160bff15eadb17252372ae18de25f463f834175998"
+  },
+  "flashed": false,
+  "hardware_tested": false
+}

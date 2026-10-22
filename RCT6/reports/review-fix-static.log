@@ -1,0 +1,1 @@
+PASS ARM GCC -fanalyzer -c: 12 C files plus PS2-enabled adapter, no diagnostics

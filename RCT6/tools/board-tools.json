@@ -1,0 +1,6 @@
+{
+  "openocd": "D:\\stm32\\STM32CubeIDE_1.19.0\\STM32CubeIDE\\plugins\\com.st.stm32cube.ide.mcu.externaltools.openocd.win32_2.4.200.202505051030\\tools\\bin\\openocd.exe",
+  "openocd_scripts": "D:\\stm32\\STM32CubeIDE_1.19.0\\STM32CubeIDE\\plugins\\com.st.stm32cube.ide.mcu.debug.openocd_2.3.100.202501240831\\resources\\openocd\\st_scripts",
+  "programmer": "D:\\stm32\\STM32CubeIDE_1.19.0\\STM32CubeIDE\\plugins\\com.st.stm32cube.ide.mcu.externaltools.cubeprogrammer.win32_2.2.200.202503041107\\tools\\bin\\STM32_Programmer_CLI.exe",
+  "python": "C:\\Users\\fakel\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe"
+}

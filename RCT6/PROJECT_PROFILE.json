@@ -1,0 +1,27 @@
+{
+  "project": "RM RCT6 stage 1",
+  "target_mcu": "STM32F103RCT6",
+  "build_system": "makefile",
+  "toolchain": "gnu-arm",
+  "compiler": "D:\\stm32\\STM32CubeIDE_1.19.0\\STM32CubeIDE\\plugins\\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344\\tools\\bin\\arm-none-eabi-gcc.exe",
+  "make": "D:\\stm32\\STM32CubeIDE_1.19.0\\STM32CubeIDE\\plugins\\com.st.stm32cube.ide.mcu.externaltools.make.win32_2.2.0.202409170845\\tools\\bin\\make.exe",
+  "source": "C:\\Users\\fakel\\Documents\\Codex\\2026-10-21\\g-g\\outputs\\RM_Car\\RCT6",
+  "build_dir": "C:\\Users\\fakel\\Documents\\Codex\\2026-10-21\\g-g\\outputs\\RM_Car\\RCT6\\build",
+  "artifact_path": "C:\\Users\\fakel\\Documents\\Codex\\2026-10-21\\g-g\\outputs\\RM_Car\\RCT6\\build\\rm_rct6.elf",
+  "artifact_kind": "elf",
+  "flash_origin": "0x08000000",
+  "flash_bytes": 262144,
+  "ram_bytes": 49152,
+  "motion_enabled_by_default": false,
+  "reproduce": [
+    ".\\build.ps1 -Test",
+    ".\\build.ps1",
+    ".\\build.ps1 -Test -Rebuild",
+    ".\\build.ps1 -Rebuild"
+  ],
+  "latest_verification_report": "reports/REVIEW_FIXES_2026-10-22.md",
+  "latest_artifact_report": "reports/software-artifact-check.json",
+  "console_baud_rate": 115200,
+  "hardware_tools_config": "tools/board-tools.json",
+  "openocd_config": ["openocd/stlink-rct6.cfg"]
+}

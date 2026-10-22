@@ -1,0 +1,6 @@
+# 这是PC测试用的模拟日志，不是驱动板实测结果。
+RM RCT6 stage 1: default motion INHIBITED
+state=2 inhibit=0x07 motor_seen=0 age_ms=500 bad=0 unknown=0
+state=2 inhibit=0x03 motor_seen=1 age_ms=6 bad=0 unknown=1
+state=2 inhibit=0x03 motor_seen=1 age_ms=10 bad=0 unknown=1
+state=2 inhibit=0x03 motor_seen=1 age_ms=8 bad=0 unknown=1

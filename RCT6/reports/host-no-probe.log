@@ -1,0 +1,5 @@
+Exception: 
+Line |
+   2 |  .\board.ps1 -Mode ReadTarget *> reports\host-no-probe.log; $nextCode= …
+     |  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | 没有检测到ST-Link，请先连接下载器和主控。

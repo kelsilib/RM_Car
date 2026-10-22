@@ -1,0 +1,37 @@
+# 编译产物排除；reports里的文字日志保留。
+**/build/
+**/Debug/
+**/Release/
+*.o
+*.obj
+*.d
+*.elf
+*.axf
+*.bin
+*.hex
+*.map
+*.lst
+*.exe
+*.dll
+/-MT
+
+# 本机缓存、工具配置缓存和打包输出。
+**/__pycache__/
+*.pyc
+*.pyo
+.em_skill.json
+**/.em_skill.json
+/work/
+/dist/
+*.zip
+.DS_Store
+Thumbs.db
+
+# 本地登录信息和私密配置。
+.env
+.env.*
+*.pem
+*.pfx
+*.key
+credentials.json
+secrets.json

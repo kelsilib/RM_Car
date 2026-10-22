@@ -1,0 +1,28 @@
+{
+  "passed": false,
+  "mode": "motor",
+  "scope": "log_checks_only",
+  "status_lines": 3,
+  "boot_markers": 1,
+  "latest": {
+    "line": 5,
+    "state": 2,
+    "inhibit": 7,
+    "motor_seen": 0,
+    "age_ms": 1500,
+    "bad": 0,
+    "unknown": 0
+  },
+  "latest_state_text": "故障",
+  "latest_reasons": [
+    "配置还有未验收项",
+    "手柄无效或数据过期",
+    "没有新鲜的电机反馈"
+  ],
+  "errors": [
+    "最后3行没有保持新鲜电机反馈：需要motor_seen=1、age_ms<=200且无0x04"
+  ],
+  "notes": [
+    "反馈只能证明驱动TX到主控RX方向，不能证明主控命令线或独立停车保护正常"
+  ]
+}

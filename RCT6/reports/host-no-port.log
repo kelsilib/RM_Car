@@ -1,0 +1,5 @@
+Exception: 
+Line |
+   2 |  .\board.ps1 -Mode Monitor -Port COM99999 *> reports\host-no-port.log; …
+     |  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | 当前不存在串口COM99999。先用Check查看设备列表。

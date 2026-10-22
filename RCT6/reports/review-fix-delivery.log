@@ -1,0 +1,30 @@
+PASS default and PS2-enabled ARM artifact checks; PowerShell UTF-8 BOM verified
+{
+  "default_flash": 20352,
+  "ps2_flash": 21264,
+  "ram_including_reserves": 9016,
+  "bin_sha256": "058bdbaad03d9eb6d691cef64dd9554e0b6ded23f350493c445a04ddd3cc146d",
+  "changed_files": [
+    "board.ps1",
+    "BRINGUP.md",
+    "CONSOLE.md",
+    "include/console.h",
+    "include/firmware_version.h",
+    "PROJECT_PROFILE.json",
+    "PROTOCOL.md",
+    "README.md",
+    "reports/REVIEW_2026-10-22.md",
+    "reports/software-artifact-check.json",
+    "reports/SOFTWARE_COMPLETE_2026-10-22.md",
+    "SOFTWARE_SCOPE.md",
+    "src/console.c",
+    "target/board_hal.c",
+    "target/board_hal.h",
+    "target/main.c",
+    "TEST_INDEX.md",
+    "tests/test_service.c",
+    "tests/test_startup.c",
+    "tools/console_reply.ps1",
+    "tests/test_console_reply.ps1"
+  ]
+}
