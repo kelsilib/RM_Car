@@ -133,6 +133,25 @@ static bool test_kinematics(void)
     c = fixture();
     rm_twist_t v = rm_slew((rm_twist_t){0},(rm_twist_t){1,1,1},&c,0.02f);
     CHECK(NEAR(v.vx,0.006f) && NEAR(v.wz,0.02f));
+    /* 用当前60mm名义轮径和CAD轮心距核对真实默认参数的换算。
+     * 上面的通用fixture使用50mm半径，不能替这一组检查；这里只在PC计算，不控制实物。 */
+    c = rm_config_default();
+    CHECK(!rm_config_motion_ready(&c) && !rm_config_calibration_ready(&c));
+    CHECK(!c.geometry_verified && !c.mapping_verified && c.speed_unit == RM_SPEED_UNKNOWN);
+    CHECK(rm_mecanum_angular(&c,(rm_twist_t){.vx=0.1f},w));
+    for (unsigned i=0;i<RM_WHEELS;++i) CHECK(NEAR(w[i],3.33333333f));
+    CHECK(rm_mecanum_angular(&c,(rm_twist_t){.vy=0.1f},w));
+    CHECK(NEAR(w[0],-3.33333333f) && NEAR(w[1],3.33333333f) &&
+          NEAR(w[2],3.33333333f) && NEAR(w[3],-3.33333333f));
+    CHECK(rm_mecanum_angular(&c,(rm_twist_t){.wz=0.5f},w));
+    CHECK(NEAR(w[0],-2.79898112f) && NEAR(w[1],2.79898112f) &&
+          NEAR(w[2],-2.79898112f) && NEAR(w[3],2.79898112f));
+    /* 已填尺寸也不能绕过未知速度单位。单位仅在这份PC局部副本中设为mm/s。 */
+    CHECK(!rm_mecanum_mm_s(&c,(rm_twist_t){.vx=0.1f},mm));
+    c.speed_unit = RM_SPEED_MM_S;
+    CHECK(rm_mecanum_mm_s(&c,(rm_twist_t){.vx=0.1f,.vy=0.02f,.wz=0.2f},mm));
+    CHECK(mm[0]==46 && mm[1]==154 && mm[2]==86 && mm[3]==114);
+    CHECK(!rm_config_motion_ready(&c));
     return true;
 }
 
