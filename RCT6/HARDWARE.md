@@ -10,10 +10,10 @@
 | 系统时钟 | HSE 8MHz ×9 =72MHz；APB1/2=36MHz | 图纸晶振与配套示例；待上板验证 |
 | 电机 UART | USART2，PA2 TX / PA3 RX，115200 8N1，无流控 | 图纸引出，官方示例支持该 UART |
 | 调试串口 | USART1，PA9 TX / PA10 RX，115200 8N1 | 已连接板载CH340；日志输出和文字指令接收，见CONSOLE.md |
-| 调试下载 | PA13 SWDIO / PA14 SWCLK；JP5 另有3V3/GND | SWD保留，不关闭 SWD |
-| USB J1 | CH340 USB串口，带自动BOOT/RESET电路 | 图纸依据；对应板上哪一个物理C口需看实物 |
+| 可选SWD调试 | PA13 SWDIO / PA14 SWCLK；JP5 另有3V3/GND | 保留接口，用于以后断点/单步调试 |
+| USB J1 | CH340 USB串口，带自动BOOT/RESET电路 | 本次首选A转C下载和串口日志入口，见[USB_ISP.md](USB_ISP.md)；物理C口位置需看实物 |
 | USB J2 | MCU USB，PA11/PA12 | 本固件没有USB设备协议；不能当成USART调试口 |
-| PS2 候选 | PB12 ATT、PB13 CLK、PB14 DAT、PB15 CMD | 图纸未见占用；**尚未接线确认，固件默认不初始化** |
+| PS2 候选 | PB12 ATT、PB13 CLK、PB14 DAT、PB15 CMD | 分别引出到JP1的22/21/24/23脚，图纸未见板载占用；**尚未接线确认，固件默认不初始化** |
 | 软件急停输入 | 未分配GPIO | `estop`是应用接口，当前目标不声称有物理急停状态检测 |
 
 板载 SPI Flash 占 PC0～PC3，按键占 PA0/PC8/PC9，LED 占 PA8。新版不沿用旧工程的 PC13 LED、TB6612 STBY 或主控编码器接线。
@@ -33,8 +33,12 @@
 
 ## 下载和供电边界
 
-ST-Link接SWDIO、SWCLK、GND及适当的目标参考电压；可选NRST。先辨认具体ST-Link的“3.3V”是供电输出还是电平参考，不将两个供电输出并联。第一次只给主控供电，电机动力断开。
+本次按用户要求使用A转C数据线，经CH340执行串口ISP。首次只给裸主控USB供电，外部5V、电机/舵机动力及其他模块断开；实际下载步骤见[USB_ISP.md](USB_ISP.md)。不要把板载PA8指示灯当作用户要求的三条红绿蓝灯带，灯带接口仍待型号及驱动资料确认。
+
+日后若使用ST-Link调试：接SWDIO、SWCLK、GND及适当的目标参考电压，可选NRST。先辨认具体ST-Link的“3.3V”是供电输出还是电平参考，不将两个供电输出并联。
 
 图纸J1/J2的VBUS以及排针5V连到同一5V网，没有看到USB与外部5V之间的隔离器件。USB与外部5V不要未经处理同时供电；具体供电方法按板卡实物和下载器落实。
 
-PS2 接收器六针板的供电、信号逻辑和针序尚未确认。启用 `RM_PS2_WIRED` 前需核对这些数据；软件不因为PB14具备某种输入耐压就默认整个接收器连接安全。
+2026-10-23已核对用户提供的[官方PS2资料](https://ycnp6l8ow4h6.feishu.cn/wiki/B0fUwn768ivrPCk4SQJcz1ILnnf)：接收器VDD标注3～5V，转接板六针标为GND/VCC/DAT/CMD/CS/CLK。完整九针、六针和RCT6对应关系见[PS2_REFERENCE.md](PS2_REFERENCE.md)。官方STM32示例的PA4～PA7属于OpenCTR板，不替换本板候选GPIO。
+
+实物转接板版本、稳压电路、DAT逻辑电平、供电余量和实际接线尚未确认。启用 `RM_PS2_WIRED` 前仍需核对；接收器供电范围不等于DAT允许电平，也不能仅因某个MCU引脚的耐压特性就认定整套连接安全。

@@ -1,0 +1,123 @@
+=== ps2-regression-before.log ===
+Existing implementation against new source-based tests; no hardware accessed.
+timing: exit=1
+FAIL line 122: w.phase_ok
+
+configuration: exit=1
+FAIL line 153: w.frames == 4 && w.length[0] == sizeof enter && w.length[1] == sizeof mode && w.length[2] == sizeof leave && w.length[3] == sizeof poll
+
+decode: exit=1
+FAIL line 187: rm_ps2_decode(frame, 9, 42, &r) && r.valid && r.at_ms == 42
+
+
+
+=== host-tests.log ===
+COMMAND: C:\Users\fakel\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\powershell\pwsh.EXE -NoProfile -File C:\Users\fakel\Documents\Codex\2026-10-21\g-g\outputs\RM_Car\RCT6\build.ps1 -Test -Rebuild
+"C:/Users/fakel/Documents/Codex/tools/w64devkit/bin/gcc.exe" -std=c11 -Wall -Wextra -Werror -Wshadow -Wundef -pedantic -O1 -g -Iinclude -Itarget src/board_config.c src/calibration.c src/chassis_app.c src/console.c src/mecanum.c src/motor_uart.c src/remote_ps2.c src/safety.c tests/test_core.c -lm -o build/test_core.exe
+"C:/Users/fakel/Documents/Codex/tools/w64devkit/bin/gcc.exe" -std=c11 -Wall -Wextra -Werror -Wshadow -Wundef -pedantic -O1 -g -Iinclude -Itarget -Dmain=rm_firmware_main -c target/main.c -o build/test_firmware_main.o
+"C:/Users/fakel/Documents/Codex/tools/w64devkit/bin/gcc.exe" -std=c11 -Wall -Wextra -Werror -Wshadow -Wundef -pedantic -O1 -g -Iinclude -Itarget src/board_config.c src/calibration.c src/chassis_app.c src/console.c src/mecanum.c src/motor_uart.c src/remote_ps2.c src/safety.c tests/test_service.c -lm -o build/test_service.exe
+"C:/Users/fakel/Documents/Codex/tools/w64devkit/bin/gcc.exe" -std=c11 -Wall -Wextra -Werror -Wshadow -Wundef -pedantic -O1 -g -Iinclude -Itarget src/remote_ps2.c tests/test_ps2.c -lm -o build/test_ps2.exe
+"C:/Users/fakel/Documents/Codex/tools/w64devkit/bin/gcc.exe" -std=c11 -Wall -Wextra -Werror -Wshadow -Wundef -pedantic -O1 -g -Iinclude -Itarget src/board_config.c src/calibration.c src/chassis_app.c src/console.c src/mecanum.c src/motor_uart.c src/remote_ps2.c src/safety.c tests/test_startup.c build/test_firmware_main.o -lm -o build/test_startup.exe
+./build/test_core.exe
+PASS parser
+PASS mapping/commands
+PASS kinematics
+PASS safety
+PASS PS2
+PASS application
+PASS all: 129218 assertions (includes deterministic noise recovery)
+./build/test_startup.exe
+FAIL bad PS2 marker clears motion line 336: setups == 1
+PASS production config stays stopped: upload=1 PS2_setup=1 max_poll_gap=28ms state=0
+PASS normal drive has no repeated setup: upload=1 PS2_setup=1 max_poll_gap=26ms state=1
+PASS idle byte may be zero: upload=1 PS2_setup=1 max_poll_gap=26ms state=1
+make: *** [Makefile:71: test] Error 1
+
+
+=== host-tests-final.log ===
+COMMAND: C:\Users\fakel\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\powershell\pwsh.EXE -NoProfile -File C:\Users\fakel\Documents\Codex\2026-10-21\g-g\outputs\RM_Car\RCT6\build.ps1 -Test -Rebuild
+"C:/Users/fakel/Documents/Codex/tools/w64devkit/bin/gcc.exe" -std=c11 -Wall -Wextra -Werror -Wshadow -Wundef -pedantic -O1 -g -Iinclude -Itarget src/board_config.c src/calibration.c src/chassis_app.c src/console.c src/mecanum.c src/motor_uart.c src/remote_ps2.c src/safety.c tests/test_core.c -lm -o build/test_core.exe
+"C:/Users/fakel/Documents/Codex/tools/w64devkit/bin/gcc.exe" -std=c11 -Wall -Wextra -Werror -Wshadow -Wundef -pedantic -O1 -g -Iinclude -Itarget -Dmain=rm_firmware_main -c target/main.c -o build/test_firmware_main.o
+"C:/Users/fakel/Documents/Codex/tools/w64devkit/bin/gcc.exe" -std=c11 -Wall -Wextra -Werror -Wshadow -Wundef -pedantic -O1 -g -Iinclude -Itarget src/board_config.c src/calibration.c src/chassis_app.c src/console.c src/mecanum.c src/motor_uart.c src/remote_ps2.c src/safety.c tests/test_service.c -lm -o build/test_service.exe
+"C:/Users/fakel/Documents/Codex/tools/w64devkit/bin/gcc.exe" -std=c11 -Wall -Wextra -Werror -Wshadow -Wundef -pedantic -O1 -g -Iinclude -Itarget src/remote_ps2.c tests/test_ps2.c -lm -o build/test_ps2.exe
+"C:/Users/fakel/Documents/Codex/tools/w64devkit/bin/gcc.exe" -std=c11 -Wall -Wextra -Werror -Wshadow -Wundef -pedantic -O1 -g -Iinclude -Itarget src/board_config.c src/calibration.c src/chassis_app.c src/console.c src/mecanum.c src/motor_uart.c src/remote_ps2.c src/safety.c tests/test_startup.c build/test_firmware_main.o -lm -o build/test_startup.exe
+./build/test_core.exe
+PASS parser
+PASS mapping/commands
+PASS kinematics
+PASS safety
+PASS PS2
+PASS application
+PASS all: 129218 assertions (includes deterministic noise recovery)
+./build/test_startup.exe
+PASS production config stays stopped: upload=1 PS2_setup=1 max_poll_gap=28ms state=0
+PASS normal drive has no repeated setup: upload=1 PS2_setup=1 max_poll_gap=26ms state=1
+PASS idle byte may be zero: upload=1 PS2_setup=1 max_poll_gap=26ms state=1
+PASS bad PS2 marker clears motion: upload=1 PS2_setup=5 max_poll_gap=28ms state=2
+PASS motor starts late: upload=2 PS2_setup=1 max_poll_gap=26ms state=0
+PASS PS2 starts late: upload=1 PS2_setup=2 max_poll_gap=28ms state=0
+PASS both devices absent: upload=5 PS2_setup=5 max_poll_gap=31ms state=2
+PASS PS2 refuses analog mode: upload=1 PS2_setup=5 max_poll_gap=28ms state=2
+PASS motor restart with START held: upload=2 PS2_setup=1 max_poll_gap=28ms state=2
+PASS PS2 restart with START held: upload=1 PS2_setup=2 max_poll_gap=26ms state=2
+PASS motor restart then deliberate rearm: upload=2 PS2_setup=1 max_poll_gap=26ms state=1
+PASS PS2 restart then deliberate rearm: upload=1 PS2_setup=2 max_poll_gap=26ms state=1
+PASS UART error stays latched: upload=1 PS2_setup=1 max_poll_gap=28ms state=2
+PASS bad frame stays latched: upload=1 PS2_setup=1 max_poll_gap=28ms state=2
+PASS initial upload TX failure: upload=1 PS2_setup=1 max_poll_gap=25ms state=2
+PASS retry upload TX failure: upload=2 PS2_setup=1 max_poll_gap=28ms state=2
+PASS late devices across tick wrap: upload=2 PS2_setup=2 max_poll_gap=27ms state=0
+PASS console queries during drive: upload=1 PS2_setup=1 max_poll_gap=30ms state=1
+PASS console stop cannot rearm held START: upload=1 PS2_setup=1 max_poll_gap=28ms state=0
+PASS console one bounded calibration pulse: upload=1 PS2_setup=1 max_poll_gap=43ms state=0
+PASS console error cancels calibration: upload=1 PS2_setup=1 max_poll_gap=43ms state=0
+PASS console stale pulse is rejected: upload=1 PS2_setup=1 max_poll_gap=31ms state=0
+PASS console queries cannot starve control: upload=1 PS2_setup=1 max_poll_gap=27ms state=1
+PASS failed arm reply revokes calibration permission: upload=1 PS2_setup=1 max_poll_gap=37ms state=0
+PASS failed pulse reply cannot start a motor: upload=1 PS2_setup=1 max_poll_gap=62ms state=0
+PASS RX fault during PS2 poll cancels pending pulse: upload=1 PS2_setup=1 max_poll_gap=43ms state=0
+PASS RX fault during PS2 poll stops running pulse: upload=1 PS2_setup=1 max_poll_gap=43ms state=0
+PASS fault after calculation replaces pending PWM with zero: upload=1 PS2_setup=1 max_poll_gap=43ms state=0
+PASS console fault leaves PS2 driving under its own safety checks: upload=1 PS2_setup=1 max_poll_gap=26ms state=1
+PASS all startup/recovery scenarios: 29
+./build/test_service.exe
+PASS calibration lifecycle
+PASS calibration guards
+PASS mode switch and timer wrap
+PASS console queries and framing
+PASS console actions and stale commands
+PASS reply markers and longest payload
+PASS service: 510 assertions
+./build/test_ps2.exe
+PASS PS2 timing
+PASS PS2 configuration
+PASS PS2 decode
+PASS PS2 arguments
+PS2: 3745 checks passed (software model only)
+
+
+=== board-tool-tests.log ===
+COMMAND: C:\Users\fakel\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\powershell\pwsh.EXE -NoProfile -File C:\Users\fakel\Documents\Codex\2026-10-21\g-g\outputs\RM_Car\RCT6\board.ps1 -Mode Test
+test_bad_frame_counter_must_stay_zero (__main__.LogChecks.test_bad_frame_counter_must_stay_zero) ... ok
+test_board_only_expected_inhibits (__main__.LogChecks.test_board_only_expected_inhibits) ... ok
+test_calibration_is_not_default_startup (__main__.LogChecks.test_calibration_is_not_default_startup) ... ok
+test_configuration_inhibit_cannot_be_bypassed (__main__.LogChecks.test_configuration_inhibit_cannot_be_bypassed) ... ok
+test_console_fault_is_not_ignored (__main__.LogChecks.test_console_fault_is_not_ignored) ... ok
+test_cut_off_or_unrecognized_status_is_rejected (__main__.LogChecks.test_cut_off_or_unrecognized_status_is_rejected) ... ok
+test_fault_bits_fail_the_check (__main__.LogChecks.test_fault_bits_fail_the_check) ... ok
+test_missing_boot_is_optional_and_can_be_required (__main__.LogChecks.test_missing_boot_is_optional_and_can_be_required) ... ok
+test_motor_can_become_ready_after_startup (__main__.LogChecks.test_motor_can_become_ready_after_startup) ... ok
+test_motor_seen_bit_and_inhibit_must_agree (__main__.LogChecks.test_motor_seen_bit_and_inhibit_must_agree) ... ok
+test_motor_timeout_is_detected (__main__.LogChecks.test_motor_timeout_is_detected) ... ok
+test_multiple_boots_fail_the_check (__main__.LogChecks.test_multiple_boots_fail_the_check) ... ok
+test_no_log_or_only_ok_is_not_success (__main__.LogChecks.test_no_log_or_only_ok_is_not_success) ... ok
+test_not_enough_status_samples (__main__.LogChecks.test_not_enough_status_samples) ... ok
+test_overflow_and_extremely_long_garbage_do_not_pass (__main__.LogChecks.test_overflow_and_extremely_long_garbage_do_not_pass) ... ok
+test_timestamp_prefixes_are_accepted (__main__.LogChecks.test_timestamp_prefixes_are_accepted) ... ok
+test_unexpected_arm_or_estop_is_rejected (__main__.LogChecks.test_unexpected_arm_or_estop_is_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.026s
+
+OK
+PASS console reply checks: 33

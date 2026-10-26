@@ -46,25 +46,46 @@ function Get-BoardProbes {
     return [pscustomobject]@{ Serials=$boardSerials; Output=$boardOutput }
 }
 
+function Invoke-BoardPython([string[]]$PythonArgs) {
+    # Python输出UTF-8时，PowerShell也必须按UTF-8接收。
+    # 只设置PYTHONIOENCODING不够：Windows PowerShell 5.1可能仍按GBK解码，
+    # 把电脑端的中文分析结果显示成乱码；这与主板串口的原始数据是两回事。
+    $boardOldConsoleEncoding = [Console]::OutputEncoding
+    $boardOldPythonEncoding = [Environment]::GetEnvironmentVariable('PYTHONIOENCODING', 'Process')
+    $boardOldPreference = $ErrorActionPreference
+    if (-not (Test-Path -LiteralPath $boardTools.python -PathType Leaf)) { throw '找不到Python，请核对tools/board-tools.json。' }
+    try {
+        [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+        $env:PYTHONIOENCODING = 'utf-8'
+        # unittest正常进度也写到stderr；PS5.1不能只因它走stderr就中断。
+        # 保留输出，最终按Python退出码判断成功或失败。
+        $ErrorActionPreference = 'Continue'
+        $global:LASTEXITCODE = 1
+        & $boardTools.python @PythonArgs 2>&1 | ForEach-Object { Write-Host "$_" }
+        return $LASTEXITCODE
+    } finally {
+        # 只在调用期间调整，完成或报错后都恢复当前终端原来的设置。
+        [Console]::OutputEncoding = $boardOldConsoleEncoding
+        [Environment]::SetEnvironmentVariable('PYTHONIOENCODING', $boardOldPythonEncoding, 'Process')
+        $ErrorActionPreference = $boardOldPreference
+    }
+}
+
 function Invoke-BoardAnalysis([string]$Path) {
     $boardArgs = @((Join-Path $PSScriptRoot 'tools\analyze_log.py'), $Path, '--mode', $Scenario,
         '--json', [IO.Path]::ChangeExtension($Path, '.analysis.json'))
     if ($RequireBoot) { $boardArgs += '--require-boot' }
-    $env:PYTHONIOENCODING = 'utf-8'
-    & $boardTools.python @boardArgs | ForEach-Object { Write-Host $_ }
-    return $LASTEXITCODE
+    return (Invoke-BoardPython -PythonArgs $boardArgs)
 }
 
 try {
     if ($Mode -eq 'Verify') {
-        $env:PYTHONIOENCODING = 'utf-8'
-        & $boardTools.python (Join-Path $PSScriptRoot 'tools\verify_firmware.py')
-        exit $LASTEXITCODE
+        $boardCode = Invoke-BoardPython -PythonArgs @((Join-Path $PSScriptRoot 'tools\verify_firmware.py'))
+        exit $boardCode
     }
     if ($Mode -eq 'Test') {
-        $env:PYTHONIOENCODING = 'utf-8'
-        & $boardTools.python (Join-Path $PSScriptRoot 'tests\test_log_tools.py')
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        $boardCode = Invoke-BoardPython -PythonArgs @((Join-Path $PSScriptRoot 'tests\test_log_tools.py'))
+        if ($boardCode -ne 0) { exit $boardCode }
         & (Join-Path $PSScriptRoot 'tests\test_console_reply.ps1')
         exit 0
     }

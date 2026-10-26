@@ -1,0 +1,14 @@
+{
+  "passed": false,
+  "mode": "startup",
+  "scope": "log_checks_only",
+  "status_lines": 0,
+  "boot_markers": 0,
+  "latest": null,
+  "latest_state_text": null,
+  "latest_reasons": [],
+  "errors": [
+    "至少需要3行完整状态日志，当前数据不足"
+  ],
+  "notes": []
+}

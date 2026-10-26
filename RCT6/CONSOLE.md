@@ -4,14 +4,14 @@
 
 没有主板时，先运行 `.\build.ps1 -Test`、`.\board.ps1 -Mode Test` 和 `.\board.ps1 -Mode Verify`。它们只在电脑上运行，不需要连接设备。
 
-有板后，`board.ps1 -Mode Terminal -Port COM7` 可以打开交互终端，把COM7换成实际端口。工具先收齐你输入的一整行，再发给主控；输入`exit`只退出电脑终端。单次指令可用 `board.ps1 -Mode Command -Port COM7 -Command 'ps2'`。目前串口实际收发尚未上板验证。
+有板后，`board.ps1 -Mode Terminal -Port COM7` 可以打开交互终端，把COM7换成实际端口。工具先收齐你输入的一整行，再发给主控；输入`exit`只退出电脑终端。单次指令可用 `board.ps1 -Mode Command -Port COM7 -Command 'ps2'`。2026-10-25用户在COM5的Terminal中取得version/config完整reply回复，确认这两条查询的实际双向收发；其他指令和Command模式仍按实际测试记录，不能自动认定全部通过。详见[单板实测记录](reports/USB_ISP_2026-10-25.md)。
 
 ## 可以发送哪些指令
 
 | 指令 | 做什么 | 怎么读结果 |
 |---|---|---|
 | `help` | 列出指令 | 不控制电机 |
-| `version` | 查看软件编号 | 当前为`rm_rct6-chassis-20261022-r1` |
+| `version` | 查看软件编号 | 当前本地构建为`rm_rct6-chassis-60mm-r2`；尚未烧录 |
 | `status` | 当前状态和不能动的原因 | state、inhibit沿用周期日志，另外显示cal阶段 |
 | `ps2` | 查看手柄 | fwd/left/yaw为千分比：1000表示该方向推满，不是m/s |
 | `counts` | 最近MAll的四个原始计数 | 按M1/M2/M3/M4排列；不是左前/右前/左后/右后顺序 |
@@ -26,7 +26,7 @@
 | `cal pulse 1 50 200` | M1给一次+50原始PWM参数、持续200ms | 通道1～4；允许负号；只执行一次，不自动重复 |
 | `cal cancel` | 取消标定并停车 | 与stop采用同一停车入口 |
 
-每条指令回复都以`reply `开头。例如`version`返回`reply version=rm_rct6-chassis-20261022-r1`，`status`返回`reply state=...`。开机版本行和每500ms的自动状态行没有这个前缀；只看到自动日志，不能说明电脑指令已被处理。
+每条指令回复都以`reply `开头。新r2下载后的`version`预期返回`reply version=rm_rct6-chassis-60mm-r2`，`status`返回`reply state=...`；这只是新版本的预期，最后确认的主板回复仍为旧版`rm_rct6-chassis-20261023-r1`。开机版本行和每500ms的自动状态行没有这个前缀；只看到自动日志，不能说明电脑指令已被处理。
 
 `reply OK`说明主控接受了指令或发出了查询，不代表驱动已执行，更不是实物验收通过。`reply ERR`后的文字解释拒绝原因。电脑的Command模式要求恰好一条完整、与本次指令对应的回复；缺少换行、出现多条回复或只收到自动日志都会报失败。新固件与此版本的board.ps1应配套使用；旧固件没有reply前缀时，Command模式会拒绝把它算作成功。
 

@@ -13,15 +13,21 @@
   "flash_bytes": 262144,
   "ram_bytes": 49152,
   "motion_enabled_by_default": false,
+  "firmware_id": "rm_rct6-chassis-60mm-r2",
+  "last_hardware_verified_firmware": "rm_rct6-chassis-20261023-r1",
   "reproduce": [
     ".\\build.ps1 -Test",
     ".\\build.ps1",
     ".\\build.ps1 -Test -Rebuild",
     ".\\build.ps1 -Rebuild"
   ],
-  "latest_verification_report": "reports/REVIEW_FIXES_2026-10-22.md",
-  "latest_artifact_report": "reports/software-artifact-check.json",
+  "latest_verification_report": "reports/GEOMETRY_60MM_CONFIG.md",
+  "latest_artifact_report": "reports/geometry-60mm-artifacts.json",
   "console_baud_rate": 115200,
+  "serial_port": "COM5",
+  "baud_rate": 115200,
+  "serial_port_observation": "2026-10-25: COM5 CH340K; user FlyMCU log reports programming complete; capture-9084bcd2.log confirms boot and 59 inhibited-state samples; user terminal output confirms version/config replies; PS2 and motors not tested",
+  "latest_hardware_report": "reports/USB_ISP_2026-10-25.md",
   "hardware_tools_config": "tools/board-tools.json",
   "openocd_config": ["openocd/stlink-rct6.cfg"]
 }

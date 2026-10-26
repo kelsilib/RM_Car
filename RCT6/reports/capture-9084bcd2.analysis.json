@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "mode": "startup",
+  "scope": "log_checks_only",
+  "status_lines": 59,
+  "boot_markers": 1,
+  "latest": {
+    "line": 62,
+    "state": 2,
+    "inhibit": 7,
+    "motor_seen": 0,
+    "age_ms": 29512,
+    "bad": 0,
+    "unknown": 0
+  },
+  "latest_state_text": "故障",
+  "latest_reasons": [
+    "配置还有未验收项",
+    "手柄无效或数据过期",
+    "没有新鲜的电机反馈"
+  ],
+  "errors": [],
+  "notes": [
+    "0x07符合默认未接手柄、未接驱动的单板状态"
+  ]
+}

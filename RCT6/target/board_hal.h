@@ -6,7 +6,8 @@
 
 /* PS2接线开关：0=不操作PS2引脚，读包一直无效；1=启用这四根线。
  * 先核对供电、电压和接线，再改1并编译下载。启用读手柄并不会自动解锁电机。
- * 暂定PB12 ATT、PB13 CLK、PB14 DAT、PB15 CMD；换引脚要同时改board_hal.c。 */
+ * 候选PB12 ATT、PB13 CLK、PB14 DAT、PB15 CMD；定义集中在board_hal.c的PS2_*_PIN。
+ * 原理图和官方示例的适用范围见PS2_REFERENCE.md，不能把示例板接线当成本板实测。 */
 #ifndef RM_PS2_WIRED
 #define RM_PS2_WIRED 0
 #endif

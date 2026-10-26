@@ -63,10 +63,14 @@ $(BUILD_DIR)/test_startup.exe: $(CORE_SOURCES) tests/test_startup.c $(BUILD_DIR)
 $(BUILD_DIR)/test_service.exe: $(CORE_SOURCES) tests/test_service.c $(wildcard include/*.h) Makefile | $(BUILD_DIR)
 	"$(HOST_CC)" $(HOST_CFLAGS) $(CORE_SOURCES) tests/test_service.c -lm -o $@
 
-test: $(BUILD_DIR)/test_core.exe $(BUILD_DIR)/test_startup.exe $(BUILD_DIR)/test_service.exe
+$(BUILD_DIR)/test_ps2.exe: src/remote_ps2.c tests/test_ps2.c include/remote_ps2.h Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) src/remote_ps2.c tests/test_ps2.c -lm -o $@
+
+test: $(BUILD_DIR)/test_core.exe $(BUILD_DIR)/test_startup.exe $(BUILD_DIR)/test_service.exe $(BUILD_DIR)/test_ps2.exe
 	./$(BUILD_DIR)/test_core.exe
 	./$(BUILD_DIR)/test_startup.exe
 	./$(BUILD_DIR)/test_service.exe
+	./$(BUILD_DIR)/test_ps2.exe
 
 # 只检查PS2接线代码能否编译；不会改变正式固件中“默认关闭PS2”的设置。
 check-ps2: | $(BUILD_DIR)

@@ -1,0 +1,6 @@
+# 派生JSON报告在Git里统一用LF；不改变JSON字段和值。
+RCT6/reports/*.json text eol=lf
+
+# 日志可能包含真实串口字节，禁止自动换行转换，也不按代码格式清理空白。
+# 保留文本差异显示；-whitespace只关闭这些原始记录的空白格式检查。
+RCT6/reports/*.log -text -whitespace

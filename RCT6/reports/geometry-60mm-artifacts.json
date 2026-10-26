@@ -1,0 +1,96 @@
+{
+  "firmware_id": "rm_rct6-chassis-60mm-r2",
+  "git_base": "bf62d3a2eab911ca48d46e224cdd324b5ff281d9",
+  "working_tree_uncommitted": true,
+  "scope": "PC regression + default ARM build and artifact validation; no device accessed",
+  "sha256": {
+    "rm_rct6.bin": "2635fd9707a86bc7ca1c8df2471f4312f17a0db843376ae7b0e9f58db2305d45",
+    "rm_rct6.elf": "161b06c5a75ba40aa0b92ac7046468b36b5805c914ed4c1987b499de1a6fe7f7",
+    "rm_rct6.hex": "4cc264dc638c0ec90c3a404dda02f2abf794e684f79fcd61063add2c3ba0ce8c"
+  },
+  "artifact_checks": {
+    "flash_bytes": 20352,
+    "ram_including_reserves_bytes": 9016,
+    "initial_stack": "0x2000c000",
+    "reset_vector": "0x8003a99",
+    "uart1_vector": "matched",
+    "uart2_vector": "matched",
+    "systick_vector": "matched",
+    "hex_bin_equal": true,
+    "scope": "artifact_structure_only",
+    "sha256": {
+      "rm_rct6.bin": "2635fd9707a86bc7ca1c8df2471f4312f17a0db843376ae7b0e9f58db2305d45",
+      "rm_rct6.elf": "161b06c5a75ba40aa0b92ac7046468b36b5805c914ed4c1987b499de1a6fe7f7",
+      "rm_rct6.hex": "4cc264dc638c0ec90c3a404dda02f2abf794e684f79fcd61063add2c3ba0ce8c"
+    },
+    "flashed": false,
+    "hardware_tested": false
+  },
+  "firmware_id_present": true,
+  "ps2_wired": false,
+  "motion_enabled_by_default": false,
+  "flashed": false,
+  "hardware_tested": false,
+  "last_hardware_verified_firmware": "rm_rct6-chassis-20261023-r1",
+  "geometry": {
+    "nominal_diameter_mm": 60,
+    "radius_m": 0.03,
+    "half_length_m": 0.070888089544,
+    "half_width_m": 0.097050777636,
+    "front_reference": "chassis notch; CAD -Z",
+    "body_left_reference": "CAD -X",
+    "wheel_layout": "photo shows diagonally paired X arrangement; assembled motion not tested",
+    "center_distances_source": "CAD; assembled 60mm-wheel distances still pending",
+    "geometry_verified": false,
+    "calibration_enabled": false,
+    "speed_unit": "UNKNOWN"
+  },
+  "user_evidence": {
+    "user_statement": "轮径60mm；图里凹进去的就是头",
+    "photo_filename": "1-照片-1.jpg",
+    "photo_sha256": "d69f4aa4e05e7bec7d7fe645fbcb1911949e4462f174562b2b978bfe33e8c0af"
+  },
+  "pc_tests": {
+    "core_assertions": 129233,
+    "startup_scenarios": 29,
+    "service_assertions": 510,
+    "ps2_checks": 3745,
+    "hardware_accessed": false
+  },
+  "firmware_inputs_sha256": {
+    "src/board_config.c": "8b90ab1961b783184a0845837aec2c34986cdf4721c534006bc016f7c10034e1",
+    "src/calibration.c": "19b792fddcd093f90692beaf42eeffb03f1000c4efc08efd5086d8749dca8422",
+    "src/chassis_app.c": "6c8758b15b9459f9318b36cef7257d721b0d5ce28a3e01ea5e332db876257dbd",
+    "src/console.c": "6d0fd15bfc3233aca7f7129cd96955853fc0d37ec53c7134680b390cc716b6d2",
+    "src/mecanum.c": "c7601798b3dc84cd471c45a88ab42ccb7f2b705dd6f210c9b8e9315cdc4acaee",
+    "src/motor_uart.c": "2aea1010adff9863c4a45133075cd8fedcf612dcb934f69e459c9ce3908ed733",
+    "src/remote_ps2.c": "d38997c830b99e3782a2f09a8a1f8a1c3deabcfd3dd71fa202d137e32af620f2",
+    "src/safety.c": "322c16b79fb520bfc76dbf359b9fac47691377f23fbccfb6171d6e749767fda4",
+    "include/board_config.h": "49f05a29dbf5ca1f3efe81d1957d50c3bc1c8017f97f5538d39e59bb619ae6a6",
+    "include/calibration.h": "39ca79b704b9a23ab677c2fad1f596ee44f308f0a6eeb3e2ac3e2aed2a2f4eed",
+    "include/chassis_app.h": "b65d238edf9c9d87bfb35e1c1d68bc18a47f9b6dd54c50f5f356abeff944f74e",
+    "include/console.h": "7e2773e4ebcf40d0faf88e35181cc83b7d06cf7212194b7fe22ae8c2c41180e0",
+    "include/firmware_version.h": "d09bb716fa2a8a0cf284851376bfca609260b722aa16a9d44fefd934c8316151",
+    "include/mecanum.h": "c4637cca4b1c79ab3789f4110bb896f313ea3aa743bbab35ab5313e2e720d6f3",
+    "include/motor_uart.h": "95d7c25014c0aa9082e605494799ac290c008f685a42fb9a36ac87f3711d9a47",
+    "include/remote_ps2.h": "bc322392c40fa84022fffc29138ef8392f135b7c89e7cafa2f86870347067300",
+    "include/safety.h": "4f902753dc6cc2fdb59921cc79ce349b066c35e07552cbb9b3e49df7e027801c",
+    "target/board_hal.c": "1b8518028068ba4d7bf7dfd73d631040b6f1ff478ea0682bb92aab0b8d78de46",
+    "target/board_hal.h": "61fba28453aaba90ce9b927525ac026f5f4759cc5302e371eb9e54da78be3370",
+    "target/interrupts.c": "e3eadb50826321c8d77bfeef5ef85f3baea618b062031d71be0032c150a548f2",
+    "target/main.c": "9d721c6b544ccf0ae8a441a832e6382b0203490fc7d86b32a551e8ffb732f83c",
+    "target/startup_stm32f103xe.s": "04d6550310b491d5d8ad4de87b9cecb631b5ba5a284340e31bc94e0d05e4230b",
+    "target/STM32F103RCTX_FLASH.ld": "631b30f0da6838cda518e0168800220ab0c3ead0d7cd2a6890fdfcea9dee9ab4",
+    "target/stm32f1xx_hal_conf.h": "1681f27b58de2d0be993aae3b3dbdde6b2ecd1a6d8f9622e7b134a8e72e5212d",
+    "target/syscalls.c": "f3fd3449b1b4060bd8fe01b76faa2292ab81e979eef2e6439f907c48f072bc98",
+    "Makefile": "664cb2e0e3e4d9f6edcd7a6995c0ac037ee3d879848c55d522d45a97fb6dcb1f"
+  },
+  "test_inputs_sha256": {
+    "tests/test_console_reply.ps1": "69519b0548b8638e4e09824728c0de946c3463a4426834bba6f88d3021980b3e",
+    "tests/test_core.c": "4f7176e4293586f4e4b40197e22ea2d793b947cef12d0110ee9141e3f0677755",
+    "tests/test_log_tools.py": "66c599308fb7f53478750fa24499d414b32052f7d2758d2a017c76c5bd06a582",
+    "tests/test_ps2.c": "de5fc41f052d5fdc6354e4fcf5dbc9bbbbd80660a373886116cffb5a8f068c66",
+    "tests/test_service.c": "53f094efd54a9a6f092f04c3088cfcf50f770274a80cbf39eec8cf40a2b9dfb9",
+    "tests/test_startup.c": "5cea747f99f62e3e26e9202e016a271a3991c799eb0ad118f354914162f69095"
+  }
+}

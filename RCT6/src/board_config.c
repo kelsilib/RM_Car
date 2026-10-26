@@ -12,9 +12,14 @@
 rm_config_t rm_config_default(void)
 {
     const rm_config_t c = {
-        /* 先用毫米测量，再除以2000填这里。例如轮径100mm，半径就填0.05m。
-         * 前后轮中心距离、左右轮中心距离也各除以2000，得到一半的距离，单位米。 */
-        .radius_m = 0.0f, .half_length_m = 0.0f, .half_width_m = 0.0f,
+        /* 用户确认实物轮径60mm，所以轮半径=60/2000=0.030m，不沿用CAD里的80mm轮。
+         * 前后轮心距141.776179mm、左右轮心距194.101555mm来自装配体/工程图，
+         * 各除以2000得到半轴距和半轮距。换成60mm实物轮后，仍需复核装好后的轮心距。
+         * 车头是底盘凹口端，已核对为CAD的-Z；车体向左为CAD的-X。
+         * 这些数值已可用于计算，但不代表验收完成；geometry_verified仍为false。
+         * 来源、照片布局和复核方法见GEOMETRY_REFERENCE.md。 */
+        .radius_m = 0.030f,
+        .half_length_m = 0.070888089544f, .half_width_m = 0.097050777636f,
         /* 手柄推到底时：平移最多0.15m/s，旋转最多0.5rad/s。先从低速测试。 */
         .max_v_m_s = 0.15f, .max_w_rad_s = 0.5f,
         /* 起步/换方向不要一下跳到目标速度。前后、左右各自每秒最多改变0.3m/s。
@@ -29,7 +34,8 @@ rm_config_t rm_config_default(void)
         .remote_timeout_ms = 200, .motor_timeout_ms = 200,
         /* 摇杆放回中间至少300ms后，再新按START。速度单位没确认时仍不能解锁。 */
         .neutral_hold_ms = 300, .speed_unit = RM_SPEED_UNKNOWN,
-        /* 确实量过尺寸、核对过轮子接线后，才把对应项改成true。 */
+        /* 轮径已由用户确认，轮心距目前是CAD初值；实车尺寸和接线逐项核对后再填true。
+         * 照片中的X布局只证明摆放方向，不能代替轮序、电机正反号和失联停车实测。 */
         .geometry_verified = false, .mapping_verified = false,
         /* 驱动里的电机类型、编码器线数、减速比、轮径和反馈方向都核对过才填true。 */
         .motor_parameters_verified = false,

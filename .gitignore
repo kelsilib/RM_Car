@@ -35,3 +35,33 @@ Thumbs.db
 *.key
 credentials.json
 secrets.json
+
+# STM32CubeIDE / Eclipse：只排除本机工作区缓存，保留可移植的工程输入。
+**/.metadata/
+**/.recommenders/
+
+# 额外构建目录和编译器中间文件。
+# 现有 build/、Debug/、Release/ 规则仍适用。
+**/cmake-build-*/
+*.su
+*.cyclo
+*.gcda
+*.gcno
+*.gcov
+
+# 调试运行时输出和编辑器临时文件；可共享的 .launch 配置不统一忽略。
+*.launchbak
+*.bak
+*.orig
+*.rej
+*.swp
+*.swo
+*~
+
+# 只忽略本地环境值，允许提交不含密钥的配置示例。
+!.env.example
+!.env.template
+
+# 以下是工程输入或审查证据，刻意不写通配忽略规则：
+# .ioc、.project、.cproject、.mxproject、可移植的 .settings/、*.launch
+# Core/、Drivers/、启动 *.s/*.S、链接 *.ld、HAL 配置和 reports/ 的文本日志
