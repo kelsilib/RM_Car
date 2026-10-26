@@ -18,9 +18,9 @@ typedef enum { DEBUG_OK, DEBUG_ARM_REPLY, DEBUG_PULSE_REPLY,
 typedef struct {
     const char *name;
     unsigned motor_ready_ms, ps2_ready_ms, motor_reset_ms, ps2_reset_ms;
-    unsigned uart_error_ms, bad_frame_ms, fail_upload_number;
+    unsigned uart_error_ms, bad_frame_ms, fail_upload_number, bad_ps2_marker_ms;
     uint32_t start_tick;
-    bool verified_config, reject_analog;
+    bool verified_config, reject_analog, alternate_idle;
     remote_script_t remote_script;
     bool expect_motor_fresh, expect_remote, expect_fault, expect_armed;
     bool expect_initial_motion, expect_rearmed_motion;
@@ -43,7 +43,7 @@ static bool initial_motion, rearmed_motion, first_setup_ok;
 static unsigned feedback_position, next_feedback_ms;
 static uint8_t tx_bytes[21], rx_bytes[9];
 static unsigned tx_bits, rx_bits;
-static bool command_high;
+static bool command_high, clock_high, selected, ps2_bus_error;
 static unsigned console_position, cal_started_ms, cal_stopped_ms;
 static bool calibration_moved, cal_running, saw_ps2, saw_counts;
 static bool debug_failed;
@@ -101,33 +101,48 @@ static void select_bus(void *ctx, bool active)
 {
     (void)ctx;
     if (active) {
+        if (selected || !clock_high) ps2_bus_error = true;
+        selected = true;
         memset(tx_bytes, 0, sizeof tx_bytes);
         memset(rx_bytes, 0xff, sizeof rx_bytes);
         tx_bits = rx_bits = 0;
         if (elapsed_ms() >= scenario->ps2_ready_ms) {
+            rx_bytes[0] = scenario->alternate_idle ? 0 : 0xff;
             rx_bytes[1] = config_mode ? 0xf3 : (analog ? 0x73 : 0x41);
             rx_bytes[2] = 0x5a;
+            if (scenario->bad_ps2_marker_ms && elapsed_ms() >= scenario->bad_ps2_marker_ms)
+                rx_bytes[2] = 0;
             for (unsigned i = 5; i < 9; ++i) rx_bytes[i] = 128;
             fill_remote();
         }
-    } else if (elapsed_ms() >= scenario->ps2_ready_ms) {
-        if (tx_bytes[1] == 0x43) config_mode = tx_bytes[3] == 1;
-        if (tx_bytes[1] == 0x44 && config_mode && tx_bytes[3] == 1 && !scenario->reject_analog)
-            analog = true;
+    } else {
+        if (!selected || !clock_high || tx_bits != rx_bits) ps2_bus_error = true;
+        selected = false;
+        /* 进入配置只有5字节；另两包设置和正常轮询都是9字节。 */
+        unsigned expected_bytes = tx_bytes[1] == 0x43 && tx_bytes[3] == 1 ? 5u : 9u;
+        if (tx_bits != expected_bytes * 8) ps2_bus_error = true;
+        if (elapsed_ms() >= scenario->ps2_ready_ms) {
+            if (tx_bytes[1] == 0x43) config_mode = tx_bytes[3] == 1;
+            if (tx_bytes[1] == 0x44 && config_mode && tx_bytes[3] == 1 && !scenario->reject_analog)
+                analog = true;
+        }
     }
 }
 static void clock_bus(void *ctx, bool high)
 {
     (void)ctx;
     if (!high && tx_bits < sizeof tx_bytes * 8) {
+        if (!selected || !clock_high) ps2_bus_error = true;
         if (command_high) tx_bytes[tx_bits / 8] |= (uint8_t)(1u << (tx_bits % 8));
         ++tx_bits;
     }
+    clock_high = high;
 }
 static void command_bus(void *ctx, bool high) { (void)ctx; command_high = high; }
 static bool data_bus(void *ctx)
 {
     (void)ctx;
+    if (!selected || clock_high || rx_bits + 1 != tx_bits) ps2_bus_error = true;
     unsigned bit = rx_bits++;
     return bit < sizeof rx_bytes * 8 && (rx_bytes[bit / 8] & (1u << (bit % 8))) != 0;
 }
@@ -177,9 +192,13 @@ bool board_motor_send(const char *frame)
         if (moving && !scenario->verified_config) unexpected_motion = true;
         if (moving && ms < 600) initial_motion = true;
         if (moving && ms >= 1560) rearmed_motion = true;
-        if ((scenario->motor_reset_ms || scenario->ps2_reset_ms || scenario->uart_error_ms || scenario->bad_frame_ms)
+        if ((scenario->motor_reset_ms || scenario->ps2_reset_ms || scenario->uart_error_ms ||
+             scenario->bad_frame_ms || scenario->bad_ps2_marker_ms)
             && ms >= 900 && ms < 1500 && g_app.safety.state == RM_ARMED)
             premature_rearm = true;
+        /* 第一次坏PS2包被主循环检查之后，不得继续发送上一包的运动值。 */
+        if (scenario->bad_ps2_marker_ms && ms >= scenario->bad_ps2_marker_ms &&
+            !g_app.remote.valid && !last_control_was_pwm0) unexpected_motion = true;
     }
     advance((unsigned)strlen(frame) * 87u);
     return true;
@@ -285,10 +304,13 @@ static bool run_scenario(const scenario_t *test)
     calibration_moved=cal_running=saw_ps2=saw_counts=false;
     debug_failed=false;
     calibration_outputs_after_fault=0;
+    command_high=clock_high=true;
+    selected=ps2_bus_error=false;
     memset(&g_app, 0, sizeof g_app);
     int result = setjmp(finish);
     if (!result) (void)rm_firmware_main();
     EXPECT(result == 1);
+    EXPECT(!ps2_bus_error);
     bool fresh = g_app.motor_seen && (uint32_t)(tick() - g_app.motor_at_ms) <= 200;
     EXPECT(fresh == test->expect_motor_fresh);
     EXPECT(g_app.remote.valid == test->expect_remote);
@@ -311,7 +333,8 @@ static bool run_scenario(const scenario_t *test)
     if (test->ps2_ready_ms >= 300 || test->reject_analog) EXPECT(!first_setup_ok);
     else EXPECT(first_setup_ok);
     if (!test->motor_ready_ms && !test->motor_reset_ms) EXPECT(uploads == 1);
-    if (!test->ps2_ready_ms && !test->ps2_reset_ms && !test->reject_analog) EXPECT(setups == 1);
+    if (!test->ps2_ready_ms && !test->ps2_reset_ms && !test->reject_analog && !test->bad_ps2_marker_ms)
+        EXPECT(setups == 1);
     printf("PASS %s: upload=%u PS2_setup=%u max_poll_gap=%ums state=%u\n",
            test->name, uploads, setups, max_poll_gap, (unsigned)g_app.safety.state);
     return true;
@@ -325,6 +348,11 @@ int main(void)
         {.name="normal drive has no repeated setup", .verified_config=true, .remote_script=DRIVE,
          .expect_motor_fresh=true, .expect_remote=true, .expect_armed=true,
          .expect_initial_motion=true, .expect_rearmed_motion=true},
+        {.name="idle byte may be zero", .verified_config=true, .remote_script=DRIVE,
+         .alternate_idle=true, .expect_motor_fresh=true, .expect_remote=true, .expect_armed=true,
+         .expect_initial_motion=true, .expect_rearmed_motion=true},
+        {.name="bad PS2 marker clears motion", .verified_config=true, .remote_script=DRIVE,
+         .bad_ps2_marker_ms=600, .expect_motor_fresh=true, .expect_initial_motion=true},
         {.name="motor starts late", .motor_ready_ms=300, .expect_motor_fresh=true, .expect_remote=true},
         {.name="PS2 starts late", .ps2_ready_ms=300, .expect_motor_fresh=true, .expect_remote=true},
         {.name="both devices absent", .motor_ready_ms=10000, .ps2_ready_ms=10000},

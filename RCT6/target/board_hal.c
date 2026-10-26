@@ -3,7 +3,7 @@
  * @brief 真正操作主控硬件的地方：时钟、引脚、串口和PS2接线。
  *
  * USART1 PA9/PA10：板载CH340调试口；USART2 PA2/PA3：电机驱动板。
- * 改PS2接线需同时改本文件的GPIO初始化和四个ps2_*回调，不能只改一处。
+ * PS2接线集中在本文件的PS2_*_PIN定义；初始化和收发回调共同使用，避免改漏。
  * 按键含义放在应用代码里；这里仅负责具体哪个引脚拉高、拉低和收发数据。
  */
 #include "board_hal.h"
@@ -197,18 +197,28 @@ void board_debug(const char *s)
 
 #if RM_PS2_WIRED
 /* PS2候选接线：PB12=ATT/CS片选，PB13=CLK时钟，PB14=DAT接收，PB15=CMD发送。
- * ATT拉低表示开始通信，CLK平时为高；DAT读接收器，CMD是发给接收器的指令。 */
+ * 双TypeC板原理图把这四脚引到JP1；官方PS2示例的PA4～PA7属于另一块板。
+ * 尚未核对实物接线，默认不开启。若更换GPIO端口，还须在board_init中开启其时钟。 */
+#define PS2_GPIO_PORT GPIOB
+enum {
+    PS2_ATT_PIN = GPIO_PIN_12, PS2_CLK_PIN = GPIO_PIN_13,
+    PS2_DAT_PIN = GPIO_PIN_14, PS2_CMD_PIN = GPIO_PIN_15,
+    PS2_OUTPUT_PINS = PS2_ATT_PIN | PS2_CLK_PIN | PS2_CMD_PIN
+};
+/* ATT拉低表示开始通信；DAT是接收器发给主控的数据，CMD是主控发出的指令。 */
 static void ps2_select(void *ctx, bool active)
-{ (void)ctx; HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, active ? GPIO_PIN_RESET : GPIO_PIN_SET); }
+{ (void)ctx; HAL_GPIO_WritePin(PS2_GPIO_PORT, PS2_ATT_PIN, active ? GPIO_PIN_RESET : GPIO_PIN_SET); }
 static void ps2_clock(void *ctx, bool high)
-{ (void)ctx; HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, high ? GPIO_PIN_SET : GPIO_PIN_RESET); }
+{ (void)ctx; HAL_GPIO_WritePin(PS2_GPIO_PORT, PS2_CLK_PIN, high ? GPIO_PIN_SET : GPIO_PIN_RESET); }
 static void ps2_command(void *ctx, bool high)
-{ (void)ctx; HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, high ? GPIO_PIN_SET : GPIO_PIN_RESET); }
+{ (void)ctx; HAL_GPIO_WritePin(PS2_GPIO_PORT, PS2_CMD_PIN, high ? GPIO_PIN_SET : GPIO_PIN_RESET); }
 static bool ps2_data(void *ctx)
-{ (void)ctx; return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14) == GPIO_PIN_SET; }
+{ (void)ctx; return HAL_GPIO_ReadPin(PS2_GPIO_PORT, PS2_DAT_PIN) == GPIO_PIN_SET; }
 static void ps2_delay(void *ctx, uint32_t us)
 {
-    /* 用“当前计数-起始计数”等够指定微秒数，计数器从最大值回到0也能正常算。 */
+    /* 用“当前计数-起始计数”等够指定微秒数，计数器从最大值回到0也能正常算。
+     * 不照搬示例里重配SysTick的延时函数，HAL的毫秒计时和超时检查还要用SysTick。
+     * 中断和HAL调用会增加实际耗时，16us不是已经用仪器量过的波形宽度。 */
     (void)ctx;
     uint32_t start = DWT->CYCCNT;
     uint32_t cycles = us * (SystemCoreClock / 1000000u);
@@ -223,12 +233,12 @@ bool board_ps2_start(void)
     /* 先准备好高电平，再把引脚切成输出，避免初始化时意外发出一个低脉冲。
      * 重连会再调用这里，所以每次都从这组已知电平开始。 */
     GPIO_InitTypeDef g = {0};
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_15, GPIO_PIN_SET);
-    g.Pin = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_15;
+    HAL_GPIO_WritePin(PS2_GPIO_PORT, PS2_OUTPUT_PINS, GPIO_PIN_SET);
+    g.Pin = PS2_OUTPUT_PINS;
     g.Mode = GPIO_MODE_OUTPUT_PP; g.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(GPIOB, &g);
-    g.Pin = GPIO_PIN_14; g.Mode = GPIO_MODE_INPUT; g.Pull = GPIO_PULLUP; /* DAT只读 */
-    HAL_GPIO_Init(GPIOB, &g);
+    HAL_GPIO_Init(PS2_GPIO_PORT, &g);
+    g.Pin = PS2_DAT_PIN; g.Mode = GPIO_MODE_INPUT; g.Pull = GPIO_PULLUP; /* DAT只读 */
+    HAL_GPIO_Init(PS2_GPIO_PORT, &g);
     return rm_ps2_configure_analog(&ps2);
 #else
     /* 接线开关未打开：四个引脚都不动。即使主循环重试，也不会给接收器发信号。 */
@@ -238,6 +248,7 @@ bool board_ps2_start(void)
 
 bool board_ps2_read(rm_remote_t *remote)
 {
+    if (!remote) return false;
 #if RM_PS2_WIRED
     return rm_ps2_poll(&ps2, board_millis(), remote);
 #else
