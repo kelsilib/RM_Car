@@ -10,7 +10,8 @@ typedef enum { RM_DISARMED, RM_ARMED, RM_FAULT, RM_ESTOP, RM_CALIBRATING } rm_mo
 enum {
     RM_INHIBIT_CONFIG = 1u << 0, RM_INHIBIT_REMOTE = 1u << 1, /* 0x01配置 / 0x02遥控 */
     RM_INHIBIT_MOTOR = 1u << 2, RM_INHIBIT_TRANSPORT = 1u << 3, /* 0x04反馈 / 0x08传输 */
-    RM_INHIBIT_ESTOP = 1u << 4, RM_INHIBIT_SCHEDULER = 1u << 5 /* 0x10急停 / 0x20调度 */
+    RM_INHIBIT_ESTOP = 1u << 4, RM_INHIBIT_SCHEDULER = 1u << 5, /* 0x10急停 / 0x20调度 */
+    RM_INHIBIT_ARM_MODE = 1u << 6 /* 0x40：L2机械臂模式；底盘强制PWM0 */
 };
 typedef struct {
     rm_motion_state_t state; /* 测试先看：是否仍为FAULT/DISARMED，而不是强行改成ARMED */

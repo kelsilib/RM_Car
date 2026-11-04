@@ -1,6 +1,6 @@
 /* PC上的纯逻辑测试，不操作实际电机；运行方式：本目录build.ps1 -Test。
  * fixture()中的尺寸和verified=true只用于模拟，不会编入STM32目标。
- * 六组测试：报文解析、轮序/命令、运动学、安全状态机、PS2、应用完整流程。
+ * 七组测试：报文解析、轮序/命令、运动学、安全状态机、PS2、应用完整流程及驱动约束。
  * FAIL会打印所在行号和表达式；看失败组名回到对应src文件定位。
  */
 #include "chassis_app.h"
@@ -22,7 +22,7 @@ static rm_config_t fixture(void)
     c.radius_m = 0.05f; c.half_length_m = 0.10f; c.half_width_m = 0.10f;
     c.geometry_verified = c.mapping_verified = c.ps2_wiring_verified = true;
     c.motor_parameters_verified = true;
-    c.remote_failsafe_verified = c.driver_failsafe_verified = true;
+    c.remote_failsafe_verified = c.software_stop_verified = true;
     c.speed_unit = RM_SPEED_MM_S;
     for (unsigned i = 0; i < RM_WHEELS; ++i) c.direction[i] = 1;
     return c;
@@ -44,6 +44,9 @@ static bool test_parser(void)
     CHECK(feed(&p, "noise\r\n$MAll:1,-2", 10, &pkt) == 0);
     CHECK(feed(&p, ",3,4#$Battery:12.60V#$MSPD:1.5,-2,0,1000#", 20, &pkt) == 3);
     CHECK(pkt.kind == RM_PACKET_SPEED && pkt.at_ms == 20 && NEAR(pkt.speeds[0],1.5f));
+    /* 速度反馈的浮点值不能套用速度指令±1000的范围；指令超限检查另有用例。 */
+    CHECK(feed(&p, "$MSPD:1250.25,-1500.5,0,1000#", 21, &pkt) == 1);
+    CHECK(NEAR(pkt.speeds[0],1250.25f) && NEAR(pkt.speeds[1],-1500.5f));
     CHECK(feed(&p, "$MAll:-2147483648,2147483647,0,0#", 30, &pkt) == 1);
     CHECK(pkt.counts[0] == INT32_MIN && pkt.counts[1] == INT32_MAX);
     const char *bad[] = {
@@ -51,7 +54,7 @@ static bool test_parser(void)
         "$MAll:1,2,3#", "$MAll:1,2,3,4,5#", "$MAll:1,2,,4#",
         "$MAll:1,2,3,4garbage#", "$MAll:+1,2,3,4#", "$MAll:1, 2,3,4#",
         "$MAll:1.0,2,3,4#", "$MSPD:nan,0,0,0#", "$MSPD:inf,0,0,0#",
-        "$MSPD:1e2,0,0,0#", "$MSPD:1001,0,0,0#", "$MSPD:1.,0,0,0#",
+        "$MSPD:1e2,0,0,0#", "$MSPD:1000001,0,0,0#", "$MSPD:1.,0,0,0#",
         "$Battery:31.00V#", "$Battery:-1V#", "$Battery:12.6Vjunk#"
     };
     for (unsigned i = 0; i < sizeof bad / sizeof bad[0]; ++i) {
@@ -133,20 +136,22 @@ static bool test_kinematics(void)
     c = fixture();
     rm_twist_t v = rm_slew((rm_twist_t){0},(rm_twist_t){1,1,1},&c,0.02f);
     CHECK(NEAR(v.vx,0.006f) && NEAR(v.wz,0.02f));
-    /* 用当前60mm名义轮径和CAD轮心距核对真实默认参数的换算。
+    /* 用更正后的80mm名义轮径和原有CAD轮心距核对真实默认参数的换算。
      * 上面的通用fixture使用50mm半径，不能替这一组检查；这里只在PC计算，不控制实物。 */
     c = rm_config_default();
     CHECK(!rm_config_motion_ready(&c) && !rm_config_calibration_ready(&c));
-    CHECK(!c.geometry_verified && !c.mapping_verified && c.speed_unit == RM_SPEED_UNKNOWN);
+    CHECK(!c.geometry_verified && !c.mapping_verified && c.speed_unit == RM_SPEED_MM_S);
+    CHECK(!c.software_stop_verified && rm_config_issues(&c)==0xBFu);
     CHECK(rm_mecanum_angular(&c,(rm_twist_t){.vx=0.1f},w));
-    for (unsigned i=0;i<RM_WHEELS;++i) CHECK(NEAR(w[i],3.33333333f));
+    for (unsigned i=0;i<RM_WHEELS;++i) CHECK(NEAR(w[i],2.5f));
     CHECK(rm_mecanum_angular(&c,(rm_twist_t){.vy=0.1f},w));
-    CHECK(NEAR(w[0],-3.33333333f) && NEAR(w[1],3.33333333f) &&
-          NEAR(w[2],3.33333333f) && NEAR(w[3],-3.33333333f));
+    CHECK(NEAR(w[0],-2.5f) && NEAR(w[1],2.5f) &&
+          NEAR(w[2],2.5f) && NEAR(w[3],-2.5f));
     CHECK(rm_mecanum_angular(&c,(rm_twist_t){.wz=0.5f},w));
-    CHECK(NEAR(w[0],-2.79898112f) && NEAR(w[1],2.79898112f) &&
-          NEAR(w[2],-2.79898112f) && NEAR(w[3],2.79898112f));
-    /* 已填尺寸也不能绕过未知速度单位。单位仅在这份PC局部副本中设为mm/s。 */
+    CHECK(NEAR(w[0],-2.09923584f) && NEAR(w[1],2.09923584f) &&
+          NEAR(w[2],-2.09923584f) && NEAR(w[3],2.09923584f));
+    /* 默认单位已获确认；保留未知单位拒绝输出的防御检查。 */
+    c.speed_unit = RM_SPEED_UNKNOWN;
     CHECK(!rm_mecanum_mm_s(&c,(rm_twist_t){.vx=0.1f},mm));
     c.speed_unit = RM_SPEED_MM_S;
     CHECK(rm_mecanum_mm_s(&c,(rm_twist_t){.vx=0.1f,.vy=0.02f,.wz=0.2f},mm));
@@ -253,6 +258,8 @@ static bool test_app(void)
 {
     rm_config_t c=fixture(); rm_app_t a; char frame[112];
     rm_app_init(&a,&c,0);
+    const char *diameter="wheel_diameter:100.000\r\n";
+    while (*diameter) rm_app_receive(&a,(uint8_t)*diameter++,0);
     for (uint32_t now=0;now<=320;now+=20) {
         app_fresh(&a,now); a.remote.arm=now==320;
         CHECK(rm_app_step(&a,now,false,frame,sizeof frame));
@@ -294,12 +301,61 @@ static bool test_app(void)
     return true;
 }
 
+/* 这是运行许可的回归，不把主控发出PWM0当成驱动已经物理停机。 */
+static bool test_driver_contract(void)
+{
+    rm_config_t c=fixture();
+    c.software_stop_verified=false;
+    CHECK(rm_config_issues(&c)==RM_CFG_SOFTWARE_STOP);
+    c.calibration_enabled=true;
+    CHECK(!rm_config_motion_ready(&c) && !rm_config_calibration_ready(&c));
+    rm_app_t a; char frame[48]; rm_app_init(&a,&c,0);
+    a.driver_info.fields=RM_DRIVER_DIAMETER; a.driver_info.wheel_diameter_mm=100.0f;
+    for(uint32_t now=0;now<=400;now+=20) {
+        app_fresh(&a,now); a.remote.arm=now>=320;
+        CHECK(rm_app_step(&a,now,false,frame,sizeof frame) && !strcmp(frame,"$pwm:0,0,0,0#"));
+    }
+    c=fixture(); rm_app_init(&a,&c,0);
+    CHECK(!rm_driver_diameter_matches(NULL,&c) && !rm_driver_diameter_matches(&a.driver_info,NULL));
+    CHECK(!rm_driver_diameter_matches(&a.driver_info,&c));
+    a.driver_info.fields=RM_DRIVER_DIAMETER;
+    const float bad[]={0,-1,NAN,INFINITY,1000001.0f,67.0f,80.0f,100.001f};
+    for(unsigned i=0;i<sizeof bad/sizeof bad[0];++i) {
+        a.driver_info.wheel_diameter_mm=bad[i];
+        CHECK(!rm_driver_diameter_matches(&a.driver_info,&c));
+    }
+    a.driver_info.wheel_diameter_mm=100.0f;
+    CHECK(rm_driver_diameter_matches(&a.driver_info,&c));
+    c.radius_m=NAN; CHECK(!rm_driver_diameter_matches(&a.driver_info,&c));
+    c=fixture(); a.driver_info.fields=0;
+    /* 没有轮径回读，即使其余验收都由PC夹具提供，也不能解锁。 */
+    for(uint32_t now=0;now<=400;now+=20) {
+        app_fresh(&a,now); a.remote.arm=now>=320;
+        CHECK(rm_app_step(&a,now,false,frame,sizeof frame) && !strcmp(frame,"$pwm:0,0,0,0#"));
+    }
+    a.driver_info.fields=RM_DRIVER_DIAMETER;
+    /* 匹配恢复后，按住START仍不能自动解锁，要重新回中、松键再新按。 */
+    for(uint32_t now=420;now<=760;now+=20) {
+        app_fresh(&a,now); CHECK(rm_app_step(&a,now,false,frame,sizeof frame));
+        CHECK(a.safety.state!=RM_ARMED);
+    }
+    a.remote.arm=false; app_fresh(&a,780); CHECK(rm_app_step(&a,780,false,frame,sizeof frame));
+    a.remote.arm=true; app_fresh(&a,800); CHECK(rm_app_step(&a,800,false,frame,sizeof frame) && a.safety.state==RM_ARMED);
+    a.remote.arm=false; a.remote.forward=1; app_fresh(&a,820);
+    CHECK(rm_app_step(&a,820,false,frame,sizeof frame) && strcmp(frame,"$spd:0,0,0,0#"));
+    a.driver_info.wheel_diameter_mm=67.0f; app_fresh(&a,840);
+    CHECK(rm_app_step(&a,840,false,frame,sizeof frame) && !strcmp(frame,"$pwm:0,0,0,0#"));
+    CHECK(a.safety.state!=RM_ARMED && (a.safety.inhibit & RM_INHIBIT_CONFIG));
+    CHECK(a.config.motor_parameters_verified && !a.transport_fault);
+    return true;
+}
+
 int main(void)
 {
     const struct { const char *name; bool (*run)(void); } tests[] = {
         {"parser",test_parser}, {"mapping/commands",test_mapping_and_commands},
         {"kinematics",test_kinematics}, {"safety",test_safety},
-        {"PS2",test_ps2}, {"application",test_app}
+        {"PS2",test_ps2}, {"application",test_app}, {"driver contract",test_driver_contract}
     };
     for (unsigned i=0;i<sizeof tests/sizeof tests[0];++i) {
         if (!tests[i].run()) return 1;

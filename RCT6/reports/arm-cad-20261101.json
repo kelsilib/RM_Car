@@ -1,0 +1,600 @@
+{
+  "date": "2026-11-01",
+  "source_folder": "C:\\Users\\fakel\\Downloads\\机械臂",
+  "archives": {
+    "c齿轮齿条机构装配体.zip": {
+      "sha256": "ab5f9e47b9152b747e8713605ffe5e346df64376ba4a282a1a9a80b04356e54b",
+      "entries": [
+        {
+          "name": "c齿轮齿条机构装配体.SLDASM",
+          "bytes": 243997,
+          "sha256": "c2f1140f58f3b2359f96383a821b7489d26fad124f30a161c84272ee31c0bd4b"
+        }
+      ]
+    },
+    "MG995.zip": {
+      "sha256": "37df4cf6503ba6ee06c30b1380b23f1cac2d6b06d02089989b15a3ee6bff37f7",
+      "entries": [
+        {
+          "name": "Braket_mg995.SLDPRT",
+          "bytes": 125001,
+          "sha256": "9bc1d4895820629a5c5dce74878714bf71c7d2aa45bcca6fc806147c7a794fa2"
+        },
+        {
+          "name": "Braket_mg995_2.SLDPRT",
+          "bytes": 110355,
+          "sha256": "277803d2540e89a0a3e32fb3aaa10085f69d1cf38e819485444ae4f5c72da395"
+        },
+        {
+          "name": "m995.SLDPRT",
+          "bytes": 241649,
+          "sha256": "761305497c4321323690e99f2ffc2f9bc09462b4c47b0ab614a69db97460168d"
+        }
+      ]
+    },
+    "小车加上升降台哦.zip": {
+      "sha256": "b9fc5d4e4603ad007824226f1d7ce10c9b7d6d8f2f9a931c5a5b3644b990528b",
+      "entries": [
+        {
+          "name": "45铜柱.SLDPRT",
+          "bytes": 78845,
+          "sha256": "5b3c65d2ad32bc2dfe3296c73fff51254c83a67e1d8c612a5042db8d86e26800"
+        },
+        {
+          "name": "80-3d.stp",
+          "bytes": 8905828,
+          "sha256": "29161c4c10e217f851e7e130b2e96f806f1c7ee56dd1d3ca9079e9053059f214"
+        },
+        {
+          "name": "80-3d.stp.SLDPRT",
+          "bytes": 6267258,
+          "sha256": "f3cac79f0f52bb28390f3bab5107e6885b206e719c838a5ab2ef19952a45df7f"
+        },
+        {
+          "name": "mg995_bracket_rebuilt.step",
+          "bytes": 138395,
+          "sha256": "efe03bb92cfb2c9b5a61e4d7d0b334606a93fd3c8b607913a0a4c70f83d6d252"
+        },
+        {
+          "name": "mg995_bracket_rebuilt.step.SLDPRT",
+          "bytes": 338288,
+          "sha256": "60c0e624e32cb0c82408cffdb7e3053a079fa5275b69bba116a42609377991ba"
+        },
+        {
+          "name": "mg995_rack100_rebuilt.step",
+          "bytes": 469653,
+          "sha256": "ecdbaa924e052b0942b1e8a969251815f2ab2410ac76ededbb0ada62e02a17a6"
+        },
+        {
+          "name": "mg995_rack100_rebuilt.step.SLDPRT",
+          "bytes": 352442,
+          "sha256": "adc4dfeaa8029c2d62741314ad5ab6e0de6d1d041352351b90dd1ca4caae805f"
+        },
+        {
+          "name": "sw_4ch_motor_driver.SLDPRT",
+          "bytes": 72321,
+          "sha256": "2eb1cf4caf484c723db0052d648a97b2cb680b63d61017f1d77a2d87c168bf30"
+        },
+        {
+          "name": "sw_buck_converter.SLDPRT",
+          "bytes": 73532,
+          "sha256": "613009b7ab6b59d3b92ae7cf081b76dff248d03296342d1a16e2c8fc5aa5bcb6"
+        },
+        {
+          "name": "sw_buck_module_b3.SLDPRT",
+          "bytes": 77530,
+          "sha256": "025bd06e0fb819031e4abc110261bf147d04d3ec89b0066e9b88e4dbec1cc1e6"
+        },
+        {
+          "name": "底盘.SLDPRT",
+          "bytes": 217888,
+          "sha256": "b350d4a302d43a412af4713f9f6723f77afa953e55f66d776d2b235a309c6c0a"
+        },
+        {
+          "name": "底盘上.SLDPRT",
+          "bytes": 119951,
+          "sha256": "8a708cd79f53e8a70606d7e6e2c558cc18b03283c1a6ee9ec87030ac8c3dd0e1"
+        },
+        {
+          "name": "电机.SLDPRT",
+          "bytes": 121195,
+          "sha256": "c03be2acce27a3c4ed64bcf9e2dbae6f458da51598ff3c88ffd506abfca37600"
+        },
+        {
+          "name": "电机支架.SLDPRT",
+          "bytes": 132771,
+          "sha256": "f3663cbb31ea189f27e542738100e4ebbd59254cf3d5541553cf042021be85da"
+        },
+        {
+          "name": "装配体2.SLDASM",
+          "bytes": 3380093,
+          "sha256": "3b1bbb941c9f32f6fb4b43ada808f18b31e8f265daa50789eb83546bc8e4d9c4"
+        },
+        {
+          "name": "装配体轮子加电机.SLDASM",
+          "bytes": 2767076,
+          "sha256": "a267d7642d5a6be4c3739eb4e45558c37d8e740c5bf368e19c6714ca378da4ab"
+        }
+      ]
+    }
+  },
+  "assemblies": [
+    {
+      "path": "cad\\c齿轮齿条机构装配体\\c齿轮齿条机构装配体.SLDASM",
+      "sha256": "c2f1140f58f3b2359f96383a821b7489d26fad124f30a161c84272ee31c0bd4b",
+      "root_model": "2",
+      "source_references": {
+        "3": "D:\\sw\\Adam校内赛\\齿轮齿条机构\\001996舵机齿轮齿条机构\\model\\c齿轮齿条机构装配体.SLDASM",
+        "6": "D:\\sw\\Adam校内赛\\齿轮齿条机构\\001996舵机齿轮齿条机构\\model\\舵机底座.SLDPRT",
+        "9": "D:\\sw\\Adam校内赛\\齿轮齿条机构\\001996舵机齿轮齿条机构\\model\\舵机.SLDPRT",
+        "12": "D:\\sw\\Adam校内赛\\齿轮齿条机构\\001996舵机齿轮齿条机构\\model\\舵机圆形舵盘.SLDPRT",
+        "15": "D:\\sw\\Adam校内赛\\齿轮齿条机构\\001996舵机齿轮齿条机构\\model\\圆柱齿轮26×1.SLDPRT",
+        "18": "D:\\sw\\Adam校内赛\\齿轮齿条机构\\001996舵机齿轮齿条机构\\model\\齿条39×1.SLDPRT"
+      },
+      "components": [
+        {
+          "depth": 0,
+          "name": "舵机底座",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "5",
+          "transform": "1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1",
+          "source_reference": "D:\\sw\\Adam校内赛\\齿轮齿条机构\\001996舵机齿轮齿条机构\\model\\舵机底座.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "舵机",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "8",
+          "transform": "1 0 0 0 0 1 0 0 0 0 1 0 -4.336808689942018e-19 -0.0288 -8.673617379884035e-19 1",
+          "source_reference": "D:\\sw\\Adam校内赛\\齿轮齿条机构\\001996舵机齿轮齿条机构\\model\\舵机.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "舵机圆形舵盘",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "11",
+          "transform": "0.6476508196664437 5.851591413883532e-17 -0.7619372781176834 0 -7.829567747584535e-17 -1 -1.433506103051387e-16 0 -0.7619372781176834 1.524975356481336e-16 -0.6476508196664437 0 -0.01 0.0184 4.77048955893622e-18 1",
+          "source_reference": "D:\\sw\\Adam校内赛\\齿轮齿条机构\\001996舵机齿轮齿条机构\\model\\舵机圆形舵盘.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "圆柱齿轮26×1",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "14",
+          "transform": "-0.1122343789817155 -7.774809669431477e-16 0.9936817620217194 0 -0.9936817620217194 -7.930412456540927e-17 -0.1122343789817155 0 1.660631557287135e-16 -1 -7.636680079991298e-16 0 -0.01000000000000006 0.01849999999999999 4.85925861180847e-17 1",
+          "source_reference": "D:\\sw\\Adam校内赛\\齿轮齿条机构\\001996舵机齿轮齿条机构\\model\\圆柱齿轮26×1.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "齿条39×1",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "17",
+          "transform": "1 8.952551772573369e-17 -1.35308431126191e-16 0 -1.35308431126191e-16 6.656013887802287e-31 -1 0 -8.952551772573651e-17 1 1.700981326882807e-30 0 -0.08967798301822535 -0.01150000000000004 0.01425000000000001 1",
+          "source_reference": "D:\\sw\\Adam校内赛\\齿轮齿条机构\\001996舵机齿轮齿条机构\\model\\齿条39×1.SLDPRT"
+        }
+      ]
+    },
+    {
+      "path": "cad\\小车加上升降台哦\\装配体2.SLDASM",
+      "sha256": "3b1bbb941c9f32f6fb4b43ada808f18b31e8f265daa50789eb83546bc8e4d9c4",
+      "root_model": "2",
+      "source_references": {
+        "3": "E:\\robomaster\\校内赛\\CopyDesignTemp\\装配体2.SLDASM",
+        "6": "E:\\robomaster\\校内赛\\底盘.SLDPRT",
+        "9": "C:\\Users\\shxxj\\AppData\\Local\\Temp\\swx14864\\VC~~\\装配体2\\装配体3^装配体2.SLDASM",
+        "12": "E:\\robomaster\\校内赛\\装配体轮子加电机.SLDASM",
+        "15": "E:\\robomaster\\校内赛\\80-3d.stp.SLDPRT",
+        "18": "E:\\robomaster\\校内赛\\电机.SLDPRT",
+        "21": "E:\\robomaster\\校内赛\\电机支架.SLDPRT",
+        "24": "C:\\Users\\shxxj\\AppData\\Local\\Temp\\swx14864\\VC~~\\装配体轮子加电机\\零件1^装配体轮子加电机.SLDPRT",
+        "29": "E:\\robomaster\\PCB\\sw_4ch_motor_driver.SLDPRT",
+        "32": "E:\\robomaster\\PCB\\sw_buck_converter.SLDPRT",
+        "35": "E:\\robomaster\\PCB\\sw_buck_module_b3.SLDPRT",
+        "38": "E:\\robomaster\\校内赛\\45铜柱.SLDPRT",
+        "44": "E:\\robomaster\\校内赛\\底盘上.SLDPRT",
+        "47": "E:\\robomaster\\校内赛\\MG955\\mg995_bracket_rebuilt.step.SLDPRT",
+        "50": "E:\\robomaster\\校内赛\\MG955\\mg995_rack100_rebuilt.step.SLDPRT"
+      },
+      "components": [
+        {
+          "depth": 0,
+          "name": "底盘",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "5",
+          "transform": "1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1",
+          "source_reference": "E:\\robomaster\\校内赛\\底盘.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "装配体3^装配体2",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "8",
+          "transform": "1 0 0 0 0 1 0 0 0 0 1 0 -1.387778780781446e-17 0 -0.005116370374562335 1",
+          "source_reference": "C:\\Users\\shxxj\\AppData\\Local\\Temp\\swx14864\\VC~~\\装配体2\\装配体3^装配体2.SLDASM"
+        },
+        {
+          "depth": 1,
+          "name": "装配体轮子加电机",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "11",
+          "transform": "-1.278450225732238e-16 -0.912197752244447 -0.4097502419769616 0 -1.551135073186055e-16 -0.4097502419769616 0.912197752244447 0 -1 1.801777393846292e-16 -8.910966378385596e-17 0 0.09705077763584861 0.02400659550640487 0.08755577033471582 1",
+          "source_reference": "E:\\robomaster\\校内赛\\装配体轮子加电机.SLDASM"
+        },
+        {
+          "depth": 2,
+          "name": "80-3d.stp",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "14",
+          "transform": "1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1",
+          "source_reference": "E:\\robomaster\\校内赛\\80-3d.stp.SLDPRT"
+        },
+        {
+          "depth": 2,
+          "name": "电机",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "17",
+          "transform": "0.9121977522444483 0.4097502419769584 -1.834989444132342e-16 0 -1.428915025280493e-16 -1.297220392985265e-16 -1 0 -0.4097502419769584 0.9121977522444483 -5.978232492736248e-17 0 -0.005467170107349947 -0.002455798941516694 0.08649999999999999 1",
+          "source_reference": "E:\\robomaster\\校内赛\\电机.SLDPRT"
+        },
+        {
+          "depth": 2,
+          "name": "电机支架",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "20",
+          "transform": "-0.4097502419769616 0.912197752244447 1.648480625755634e-16 0 -0.912197752244447 -0.4097502419769616 1.557319472076792e-16 0 2.096048657252663e-16 -8.656282909139095e-17 1 0 0.019162169203251 0.008607457591861175 0.04899999999999999 1",
+          "source_reference": "E:\\robomaster\\校内赛\\电机支架.SLDPRT"
+        },
+        {
+          "depth": 2,
+          "name": "零件1^装配体轮子加电机",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "23",
+          "transform": "1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.002 1",
+          "source_reference": "C:\\Users\\shxxj\\AppData\\Local\\Temp\\swx14864\\VC~~\\装配体轮子加电机\\零件1^装配体轮子加电机.SLDPRT"
+        },
+        {
+          "depth": 1,
+          "name": "装配体轮子加电机",
+          "instance": "2",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "11",
+          "transform": "5.551115123125783e-17 -0.9121977522444469 0.4097502419769618 0 5.551115123125781e-17 -0.4097502419769618 -0.9121977522444469 0 1 7.338285502708256e-17 2.789143972822732e-17 0 -0.09705077763584863 0.02400659550640487 0.08755577033471587 1",
+          "source_reference": "E:\\robomaster\\校内赛\\装配体轮子加电机.SLDASM"
+        },
+        {
+          "depth": 2,
+          "name": "80-3d.stp",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "14",
+          "transform": "1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1",
+          "source_reference": "E:\\robomaster\\校内赛\\80-3d.stp.SLDPRT"
+        },
+        {
+          "depth": 2,
+          "name": "电机",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "17",
+          "transform": "0.9121977522444483 0.4097502419769584 -1.834989444132342e-16 0 -1.428915025280493e-16 -1.297220392985265e-16 -1 0 -0.4097502419769584 0.9121977522444483 -5.978232492736248e-17 0 -0.005467170107349947 -0.002455798941516694 0.08649999999999999 1",
+          "source_reference": "E:\\robomaster\\校内赛\\电机.SLDPRT"
+        },
+        {
+          "depth": 2,
+          "name": "电机支架",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "20",
+          "transform": "-0.4097502419769616 0.912197752244447 1.648480625755634e-16 0 -0.912197752244447 -0.4097502419769616 1.557319472076792e-16 0 2.096048657252663e-16 -8.656282909139095e-17 1 0 0.019162169203251 0.008607457591861175 0.04899999999999999 1",
+          "source_reference": "E:\\robomaster\\校内赛\\电机支架.SLDPRT"
+        },
+        {
+          "depth": 2,
+          "name": "零件1^装配体轮子加电机",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "23",
+          "transform": "1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.002 1",
+          "source_reference": "C:\\Users\\shxxj\\AppData\\Local\\Temp\\swx14864\\VC~~\\装配体轮子加电机\\零件1^装配体轮子加电机.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "装配体3^装配体2",
+          "instance": "2",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "8",
+          "transform": "1 0 0 0 0 1 0 0 0 0 1 0 -2.775557561562891e-17 0 -0.146892549462031 1",
+          "source_reference": "C:\\Users\\shxxj\\AppData\\Local\\Temp\\swx14864\\VC~~\\装配体2\\装配体3^装配体2.SLDASM"
+        },
+        {
+          "depth": 1,
+          "name": "装配体轮子加电机",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "11",
+          "transform": "-1.278450225732238e-16 -0.912197752244447 -0.4097502419769616 0 -1.551135073186055e-16 -0.4097502419769616 0.912197752244447 0 -1 1.801777393846292e-16 -8.910966378385596e-17 0 0.09705077763584861 0.02400659550640487 0.08755577033471582 1",
+          "source_reference": "E:\\robomaster\\校内赛\\装配体轮子加电机.SLDASM"
+        },
+        {
+          "depth": 2,
+          "name": "80-3d.stp",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "14",
+          "transform": "1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1",
+          "source_reference": "E:\\robomaster\\校内赛\\80-3d.stp.SLDPRT"
+        },
+        {
+          "depth": 2,
+          "name": "电机",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "17",
+          "transform": "0.9121977522444483 0.4097502419769584 -1.834989444132342e-16 0 -1.428915025280493e-16 -1.297220392985265e-16 -1 0 -0.4097502419769584 0.9121977522444483 -5.978232492736248e-17 0 -0.005467170107349947 -0.002455798941516694 0.08649999999999999 1",
+          "source_reference": "E:\\robomaster\\校内赛\\电机.SLDPRT"
+        },
+        {
+          "depth": 2,
+          "name": "电机支架",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "20",
+          "transform": "-0.4097502419769616 0.912197752244447 1.648480625755634e-16 0 -0.912197752244447 -0.4097502419769616 1.557319472076792e-16 0 2.096048657252663e-16 -8.656282909139095e-17 1 0 0.019162169203251 0.008607457591861175 0.04899999999999999 1",
+          "source_reference": "E:\\robomaster\\校内赛\\电机支架.SLDPRT"
+        },
+        {
+          "depth": 2,
+          "name": "零件1^装配体轮子加电机",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "23",
+          "transform": "1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.002 1",
+          "source_reference": "C:\\Users\\shxxj\\AppData\\Local\\Temp\\swx14864\\VC~~\\装配体轮子加电机\\零件1^装配体轮子加电机.SLDPRT"
+        },
+        {
+          "depth": 1,
+          "name": "装配体轮子加电机",
+          "instance": "2",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "11",
+          "transform": "5.551115123125783e-17 -0.9121977522444469 0.4097502419769618 0 5.551115123125781e-17 -0.4097502419769618 -0.9121977522444469 0 1 7.338285502708256e-17 2.789143972822732e-17 0 -0.09705077763584863 0.02400659550640487 0.08755577033471587 1",
+          "source_reference": "E:\\robomaster\\校内赛\\装配体轮子加电机.SLDASM"
+        },
+        {
+          "depth": 2,
+          "name": "80-3d.stp",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "14",
+          "transform": "1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1",
+          "source_reference": "E:\\robomaster\\校内赛\\80-3d.stp.SLDPRT"
+        },
+        {
+          "depth": 2,
+          "name": "电机",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "17",
+          "transform": "0.9121977522444483 0.4097502419769584 -1.834989444132342e-16 0 -1.428915025280493e-16 -1.297220392985265e-16 -1 0 -0.4097502419769584 0.9121977522444483 -5.978232492736248e-17 0 -0.005467170107349947 -0.002455798941516694 0.08649999999999999 1",
+          "source_reference": "E:\\robomaster\\校内赛\\电机.SLDPRT"
+        },
+        {
+          "depth": 2,
+          "name": "电机支架",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "20",
+          "transform": "-0.4097502419769616 0.912197752244447 1.648480625755634e-16 0 -0.912197752244447 -0.4097502419769616 1.557319472076792e-16 0 2.096048657252663e-16 -8.656282909139095e-17 1 0 0.019162169203251 0.008607457591861175 0.04899999999999999 1",
+          "source_reference": "E:\\robomaster\\校内赛\\电机支架.SLDPRT"
+        },
+        {
+          "depth": 2,
+          "name": "零件1^装配体轮子加电机",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "23",
+          "transform": "1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.002 1",
+          "source_reference": "C:\\Users\\shxxj\\AppData\\Local\\Temp\\swx14864\\VC~~\\装配体轮子加电机\\零件1^装配体轮子加电机.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "sw_4ch_motor_driver",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "28",
+          "transform": "1 0 0 0 0 0 1 0 0 -1 0 0 0.03426627298653454 0.0046 0.0003631691354794679 1",
+          "source_reference": "E:\\robomaster\\PCB\\sw_4ch_motor_driver.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "sw_buck_converter",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "31",
+          "transform": "-0.0005162369863616189 -4.253996378609924e-16 -0.999999866749678 0 0.9999998667496779 -6.009278515712035e-16 -0.0005162369863617898 0 -2.674891705071643e-16 -1 4.593109054200858e-16 0 -0.04014965896933362 -2.319245680849012e-18 0.007475632572745403 1",
+          "source_reference": "E:\\robomaster\\PCB\\sw_buck_converter.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "sw_buck_module_b3",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "34",
+          "transform": "1 0 0 0 0 0 1 0 0 -1 0 0 0.003962392119218072 0 0.09078631450717539 1",
+          "source_reference": "E:\\robomaster\\PCB\\sw_buck_module_b3.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "45铜柱",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "37",
+          "transform": "0 1 0 0 -0.8371691043312224 0 -0.5469441386039887 0 -0.5469441386039887 0 0.8371691043312224 0 -0.06249999999999999 -0.045 0.1149999999999999 1",
+          "source_reference": "E:\\robomaster\\校内赛\\45铜柱.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "45铜柱",
+          "instance": "2",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "37",
+          "transform": "0 1 0 0 -0.8371691043312224 0 -0.5469441386039887 0 -0.5469441386039887 0 0.8371691043312224 0 0.0624999999999992 -0.045 0.1150000000000004 1",
+          "source_reference": "E:\\robomaster\\校内赛\\45铜柱.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "45铜柱",
+          "instance": "3",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "37",
+          "transform": "0 1 0 0 -0.8371691043312224 0 -0.5469441386039887 0 -0.5469441386039887 0 0.8371691043312224 0 -0.06249999999999999 -0.045 -0.1149999999999999 1",
+          "source_reference": "E:\\robomaster\\校内赛\\45铜柱.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "45铜柱",
+          "instance": "4",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "37",
+          "transform": "0 1 0 0 -0.8371691043312224 0 -0.5469441386039887 0 -0.5469441386039887 0 0.8371691043312224 0 0.06250000000000075 -0.045 -0.1149999999999995 1",
+          "source_reference": "E:\\robomaster\\校内赛\\45铜柱.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "底盘上",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "43",
+          "transform": "1 0 0 0 0 1 0 0 0 0 1 0 2.775557561562891e-17 -0.048 -2.775557561562891e-17 1",
+          "source_reference": "E:\\robomaster\\校内赛\\底盘上.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "mg995_bracket_rebuilt.step",
+          "instance": "2",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "46",
+          "transform": "-5.551115123125784e-17 -1.473178730987427e-32 1 0 -0.9999999999999999 7.696221322069261e-32 -5.55111512312578e-17 0 -7.696221322069261e-32 -0.9999999999999999 -1.473178730987427e-32 0 0.01859372699803802 -0.079 0.06360014665056993 1",
+          "source_reference": "E:\\robomaster\\校内赛\\MG955\\mg995_bracket_rebuilt.step.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "mg995_rack100_rebuilt.step",
+          "instance": "3",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "49",
+          "transform": "-7.613807916131429e-16 -1 3.330669073875469e-16 0 -1 7.613807916131429e-16 -3.233878749888995e-16 0 3.233878749888993e-16 -3.330669073875471e-16 -1 0 -0.01005627300196198 -0.1069645004165103 0.1039301466505699 1",
+          "source_reference": "E:\\robomaster\\校内赛\\MG955\\mg995_rack100_rebuilt.step.SLDPRT"
+        }
+      ]
+    },
+    {
+      "path": "cad\\小车加上升降台哦\\装配体轮子加电机.SLDASM",
+      "sha256": "a267d7642d5a6be4c3739eb4e45558c37d8e740c5bf368e19c6714ca378da4ab",
+      "root_model": "2",
+      "source_references": {
+        "3": "E:\\robomaster\\校内赛\\装配体轮子加电机.SLDASM",
+        "6": "E:\\robomaster\\校内赛\\80-3d.stp.SLDPRT",
+        "9": "E:\\robomaster\\校内赛\\电机.SLDPRT",
+        "12": "E:\\robomaster\\校内赛\\电机支架.SLDPRT",
+        "15": "C:\\Users\\shxxj\\AppData\\Local\\Temp\\swx15672\\VC~~\\装配体轮子加电机\\零件1^装配体轮子加电机.SLDPRT"
+      },
+      "components": [
+        {
+          "depth": 0,
+          "name": "80-3d.stp",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "5",
+          "transform": "1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1",
+          "source_reference": "E:\\robomaster\\校内赛\\80-3d.stp.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "电机",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "8",
+          "transform": "0.9121977522444483 0.4097502419769584 -1.834989444132342e-16 0 -1.428915025280493e-16 -1.297220392985265e-16 -1 0 -0.4097502419769584 0.9121977522444483 -5.978232492736248e-17 0 -0.005467170107349947 -0.002455798941516694 0.08649999999999999 1",
+          "source_reference": "E:\\robomaster\\校内赛\\电机.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "电机支架",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "11",
+          "transform": "-0.4097502419769616 0.912197752244447 1.648480625755634e-16 0 -0.912197752244447 -0.4097502419769616 1.557319472076792e-16 0 2.096048657252663e-16 -8.656282909139095e-17 1 0 0.019162169203251 0.008607457591861175 0.04899999999999999 1",
+          "source_reference": "E:\\robomaster\\校内赛\\电机支架.SLDPRT"
+        },
+        {
+          "depth": 0,
+          "name": "零件1^装配体轮子加电机",
+          "instance": "1",
+          "suppressed": "NO",
+          "hidden": "NO",
+          "model_ref": "14",
+          "transform": "1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.002 1",
+          "source_reference": "C:\\Users\\shxxj\\AppData\\Local\\Temp\\swx15672\\VC~~\\装配体轮子加电机\\零件1^装配体轮子加电机.SLDPRT"
+        }
+      ]
+    }
+  ],
+  "validated_streams": 763,
+  "method": "Read-only modern SolidWorks chunk extraction; raw DEFLATE; uncompressed size and CRC32 checked; saved component trees and previews only",
+  "scope": "No CAD kernel, mate solver, physical travel, or MG995 electrical specification verified",
+  "user_assignment": "S1 lift candidate; S2-S7 numbered channels per explicit user reply"
+}

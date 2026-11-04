@@ -1,0 +1,126 @@
+=== pc-regression.log ===
+PASS parser
+PASS mapping/commands
+PASS kinematics
+PASS safety
+PASS PS2
+PASS application
+PASS driver contract
+PASS all: 129334 assertions (includes deterministic noise recovery)
+PASS production config stays stopped: upload=1 PS2_setup=1 max_poll_gap=27ms state=0
+PASS confirmed units do not bypass independent stop: upload=1 PS2_setup=1 max_poll_gap=27ms state=0
+PASS missing flash diameter blocks speed output: upload=1 PS2_setup=1 max_poll_gap=27ms state=0
+PASS mismatched flash diameter blocks speed output: upload=1 PS2_setup=1 max_poll_gap=27ms state=0
+PASS normal drive has no repeated setup: upload=1 PS2_setup=1 max_poll_gap=25ms state=1
+PASS idle byte may be zero: upload=1 PS2_setup=1 max_poll_gap=25ms state=1
+PASS bad PS2 marker clears motion: upload=1 PS2_setup=5 max_poll_gap=26ms state=2
+PASS motor starts late: upload=2 PS2_setup=1 max_poll_gap=28ms state=0
+PASS PS2 starts late: upload=1 PS2_setup=2 max_poll_gap=29ms state=0
+PASS both devices absent: upload=5 PS2_setup=5 max_poll_gap=31ms state=2
+PASS PS2 refuses analog mode: upload=1 PS2_setup=5 max_poll_gap=29ms state=2
+PASS motor restart with START held: upload=2 PS2_setup=1 max_poll_gap=28ms state=2
+PASS PS2 restart with START held: upload=1 PS2_setup=2 max_poll_gap=27ms state=2
+PASS motor restart then deliberate rearm: upload=2 PS2_setup=1 max_poll_gap=28ms state=1
+PASS PS2 restart then deliberate rearm: upload=1 PS2_setup=2 max_poll_gap=27ms state=1
+PASS UART error stays latched: upload=1 PS2_setup=1 max_poll_gap=27ms state=2
+PASS bad frame stays latched: upload=1 PS2_setup=1 max_poll_gap=27ms state=2
+PASS initial upload TX failure: upload=1 PS2_setup=1 max_poll_gap=28ms state=2
+PASS retry upload TX failure: upload=2 PS2_setup=1 max_poll_gap=27ms state=2
+PASS late devices across tick wrap: upload=2 PS2_setup=2 max_poll_gap=29ms state=0
+PASS console queries during drive: upload=1 PS2_setup=1 max_poll_gap=36ms state=1
+PASS console stop cannot rearm held START: upload=1 PS2_setup=1 max_poll_gap=30ms state=0
+PASS console one bounded calibration pulse: upload=1 PS2_setup=1 max_poll_gap=29ms state=0
+PASS console error cancels calibration: upload=1 PS2_setup=1 max_poll_gap=29ms state=0
+PASS console stale pulse is rejected: upload=1 PS2_setup=1 max_poll_gap=32ms state=0
+PASS console queries cannot starve control: upload=1 PS2_setup=1 max_poll_gap=41ms state=1
+PASS failed arm reply revokes calibration permission: upload=1 PS2_setup=1 max_poll_gap=38ms state=0
+PASS failed pulse reply cannot start a motor: upload=1 PS2_setup=1 max_poll_gap=48ms state=0
+PASS RX fault during PS2 poll cancels pending pulse: upload=1 PS2_setup=1 max_poll_gap=29ms state=0
+PASS RX fault during PS2 poll stops running pulse: upload=1 PS2_setup=1 max_poll_gap=29ms state=0
+PASS fault after calculation replaces pending PWM with zero: upload=1 PS2_setup=1 max_poll_gap=29ms state=0
+PASS console fault leaves PS2 driving under its own safety checks: upload=1 PS2_setup=1 max_poll_gap=25ms state=1
+PASS all startup/recovery scenarios: 32
+PASS calibration lifecycle
+PASS calibration guards
+PASS mode switch and timer wrap
+PASS console queries and framing
+PASS console actions and stale commands
+PASS reply markers and longest payload
+PASS driver plain-text configuration
+PASS driver configuration boundaries
+PASS driver safety facts are read only
+PASS service: 555 assertions
+PASS PS2 timing
+PASS PS2 configuration
+PASS PS2 decode
+PASS PS2 arguments
+PS2: 6580 checks passed (software model only)
+PASS arm configuration gates
+PASS arm explicit start and hold
+PASS arm selection limits and fractional rate
+PASS arm faults and timer wrap
+PASS arm chassis interlock and queries
+PASS arm input perturbations
+PASS arm mode transition requires separate unlock
+PASS arm: 42651 assertions (PC only)
+PASS arm main normal one-channel control
+PASS arm main default disabled
+PASS arm main motor TX fails before first pulse
+PASS arm main motor TX fails before new pulse
+PASS arm main UART fault during motor send
+PASS arm main UART fault while polling PS2
+PASS arm main console fault while polling PS2
+PASS arm main servo write fails before first pulse
+PASS arm main stale remote cannot update pulse
+PASS arm main mode exit holds position
+PASS arm main SELECT overrides movement
+PASS arm main scenarios: 11
+
+=== board-tools-tests.log ===
+test_bad_frame_counter_must_stay_zero (__main__.LogChecks.test_bad_frame_counter_must_stay_zero) ... ok
+test_board_only_expected_inhibits (__main__.LogChecks.test_board_only_expected_inhibits) ... ok
+test_calibration_is_not_default_startup (__main__.LogChecks.test_calibration_is_not_default_startup) ... ok
+test_configuration_inhibit_cannot_be_bypassed (__main__.LogChecks.test_configuration_inhibit_cannot_be_bypassed) ... ok
+test_console_fault_is_not_ignored (__main__.LogChecks.test_console_fault_is_not_ignored) ... ok
+test_cut_off_or_unrecognized_status_is_rejected (__main__.LogChecks.test_cut_off_or_unrecognized_status_is_rejected) ... ok
+test_fault_bits_fail_the_check (__main__.LogChecks.test_fault_bits_fail_the_check) ... ok
+test_missing_boot_is_optional_and_can_be_required (__main__.LogChecks.test_missing_boot_is_optional_and_can_be_required) ... ok
+test_motor_can_become_ready_after_startup (__main__.LogChecks.test_motor_can_become_ready_after_startup) ... ok
+test_motor_seen_bit_and_inhibit_must_agree (__main__.LogChecks.test_motor_seen_bit_and_inhibit_must_agree) ... ok
+test_motor_timeout_is_detected (__main__.LogChecks.test_motor_timeout_is_detected) ... ok
+test_multiple_boots_fail_the_check (__main__.LogChecks.test_multiple_boots_fail_the_check) ... ok
+test_no_log_or_only_ok_is_not_success (__main__.LogChecks.test_no_log_or_only_ok_is_not_success) ... ok
+test_not_enough_status_samples (__main__.LogChecks.test_not_enough_status_samples) ... ok
+test_overflow_and_extremely_long_garbage_do_not_pass (__main__.LogChecks.test_overflow_and_extremely_long_garbage_do_not_pass) ... ok
+test_timestamp_prefixes_are_accepted (__main__.LogChecks.test_timestamp_prefixes_are_accepted) ... ok
+test_unexpected_arm_or_estop_is_rejected (__main__.LogChecks.test_unexpected_arm_or_estop_is_rejected) ... ok
+Ran 17 tests in 0.005s
+OK
+test_default_version_comes_from_project_profile (__main__.FirmwareCheckTests.test_default_version_comes_from_project_profile) ... ok
+test_existing_report_is_preserved (__main__.FirmwareCheckTests.test_existing_report_is_preserved) ... ok
+test_version_prefix_is_rejected_before_reading_elf (__main__.FirmwareCheckTests.test_version_prefix_is_rejected_before_reading_elf) ... ok
+test_changed_binary_fails (__main__.HostCheckTests.test_changed_binary_fails) ... ok
+test_legacy_hash_format (__main__.HostCheckTests.test_legacy_hash_format) ... ok
+test_missing_hash_fails (__main__.HostCheckTests.test_missing_hash_fails) ... ok
+test_variant_hash_format_without_openocd (__main__.HostCheckTests.test_variant_hash_format_without_openocd) ... ok
+Ran 7 tests in 1.812s
+OK
+PASS console reply checks: 43
+
+=== static-analysis.log ===
+arm_config.c [] 0 
+arm_control.c [] 0 
+board_config.c [] 0 
+calibration.c [] 0 
+chassis_app.c [] 0 
+console.c [] 0 
+mecanum.c [] 0 
+motor_uart.c [] 0 
+remote_ps2.c [] 0 
+safety.c [] 0 
+main.c [] 0 
+board_hal.c [] 0 
+board_servo.c [] 0 
+board_hal.c ['-DRM_PS2_WIRED=1'] 0 
+board_servo.c ['-DRM_ARM_WIRED=1'] 0 
+

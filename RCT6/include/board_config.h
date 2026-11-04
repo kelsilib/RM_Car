@@ -18,17 +18,21 @@ typedef struct {
     rm_speed_unit_t speed_unit; /* 厂商spd命令的真实速度单位 */
     /* verified表示“这一项已核实”。哪项真正测过了才填true，不能为了让车动全勾上。 */
     bool geometry_verified, mapping_verified, motor_parameters_verified, ps2_wiring_verified;
-    bool remote_failsafe_verified, driver_failsafe_verified;
+    bool remote_failsafe_verified;
+    /* 2026-11-04用户选择人工看护、架空联调，以SELECT/电脑stop作为软件急停。
+     * 两个入口经接线后的停车测试确认再填true。主控和TX正常时才能把PWM0送达，
+     * 这项验收只记录软件停车效果，断电重接线和断线试验在电机动力隔离后进行。 */
+    bool software_stop_verified;
     /* 单轮标定是单独的受限模式，默认关闭。幅度是厂商pwm参数，不是百分比。
      * 驱动自身还可能添加死区补偿，所以不能把100理解成很小的实际占空比。 */
     bool calibration_enabled;
     uint16_t calibration_max_pwm, calibration_max_ms;
 } rm_config_t;
 
-/* config指令显示的缺项：尺寸、轮序、电机参数、PS2接线、无线保护、驱动保护、速度单位、数值。 */
+/* config指令显示的缺项：尺寸、轮序、电机参数、PS2接线、无线保护、软件停车、速度单位、数值。 */
 enum {
     RM_CFG_GEOMETRY=1u, RM_CFG_MAPPING=2u, RM_CFG_MOTOR=4u, RM_CFG_PS2=8u,
-    RM_CFG_RADIO=16u, RM_CFG_DRIVER=32u, RM_CFG_UNIT=64u, RM_CFG_VALUES=128u
+    RM_CFG_RADIO=16u, RM_CFG_SOFTWARE_STOP=32u, RM_CFG_UNIT=64u, RM_CFG_VALUES=128u
 };
 
 /* 返回一份默认参数。默认有未确认项，所以实物不能直接解锁。 */
@@ -36,6 +40,6 @@ rm_config_t rm_config_default(void);
 /* 检查参数有没有填全且合法。返回true后，还要由safety检查当前通信和按键。 */
 bool rm_config_motion_ready(const rm_config_t *c);
 uint32_t rm_config_issues(const rm_config_t *c);
-/* 标定不需要已知轮径/轮序/速度单位，但必须确认遥控和独立停车保护。 */
+/* 标定不需要已知轮径/轮序/速度单位，先确认遥控与软件停车入口，再明确启用标定。 */
 bool rm_config_calibration_ready(const rm_config_t *c);
 #endif

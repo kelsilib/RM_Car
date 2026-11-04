@@ -1,0 +1,20 @@
+{
+  "flash_bytes": 27016,
+  "ram_including_reserves_bytes": 9376,
+  "initial_stack": "0x2000c000",
+  "reset_vector": "0x80051a5",
+  "uart1_vector": "matched",
+  "uart2_vector": "matched",
+  "systick_vector": "matched",
+  "hex_bin_equal": true,
+  "scope": "artifact_structure_only",
+  "sha256": {
+    "rm_rct6.bin": "0138451775186b293b38518847bcaa3c1e8a9c881b8a7b03deb6ce2cc840d841",
+    "rm_rct6.elf": "ff42a8ed2779219e41aa40afc6e7d10fbc08562f14cc752bd4ea99b9943cda26",
+    "rm_rct6.hex": "332170063471527ae6671810e5435d8c4fe778df0ed65671b99039b0284802b5"
+  },
+  "build_directory": "C:\\Users\\fakel\\Documents\\ChatGPT\\adam校内赛\\RCT6\\build-ps2-readonly",
+  "expected_version": "rm_rct6-preflight-20261104-r7-ps2",
+  "flashed": false,
+  "hardware_tested": false
+}

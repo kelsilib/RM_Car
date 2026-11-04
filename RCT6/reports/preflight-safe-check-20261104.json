@@ -1,0 +1,20 @@
+{
+  "flash_bytes": 26056,
+  "ram_including_reserves_bytes": 9376,
+  "initial_stack": "0x2000c000",
+  "reset_vector": "0x8004e3d",
+  "uart1_vector": "matched",
+  "uart2_vector": "matched",
+  "systick_vector": "matched",
+  "hex_bin_equal": true,
+  "scope": "artifact_structure_only",
+  "sha256": {
+    "rm_rct6.bin": "6161c6cd12ecdc2a57eb482d9cadccaa572a0fc39fe4222cda566260ee4d8708",
+    "rm_rct6.elf": "08076831f9188300b9099e20eac83cab17b4dc7fb3282ccf4c162e54d77ee594",
+    "rm_rct6.hex": "85a2a0a814be577e6470ee08070f764cafb9e6676aff9abb625b6a086bf2f379"
+  },
+  "build_directory": "C:\\Users\\fakel\\Documents\\ChatGPT\\adam校内赛\\RCT6\\build",
+  "expected_version": "rm_rct6-preflight-20261104-r7-safe",
+  "flashed": false,
+  "hardware_tested": false
+}

@@ -1,5 +1,7 @@
 # 第一阶段：编译、下载与无动力联调
 
+2026-11-04当前r8固件、接线与软件急停流程见[今晚麦轮联调](TONIGHT_BRINGUP.md)，以下通用步骤及以前记录继续保留。
+
 当前已完成真实主机测试与RCT6固件构建。2026-10-25用户已通过CH340/FlyMCU下载，取得主控启动、周期禁动日志和version/config查询回复；**PS2、电机和整车实测仍待完成**。实际证据见[单板实测记录](reports/USB_ISP_2026-10-25.md)。
 
 ## 1. 重现软件验证
@@ -11,7 +13,7 @@ PowerShell进入本文件目录，运行：
 .\build.ps1
 ```
 
-需要把所有文件重新编译时用 `.\build.ps1 -Rebuild`；PC测试可用 `.\build.ps1 -Test -Rebuild`。测试包含原六组逻辑、29个模拟主循环场景、六组标定/指令检查和四组PS2协议专项测试，都不连接实物。`.\board.ps1 -Mode Test`还会检查日志和电脑回复的判断规则。设备未连接时可继续这些软件验证。
+全量固件用build.ps1 -Rebuild，PC用-Test -Rebuild。当前r8服务10组745条断言，全部回归见[本次报告](reports/SOFTWARE_STOP_2026-11-04.md)，电脑工具用board.ps1 -Mode Test。
 
 `-Test`使用本机w64devkit GCC；固件使用 `D:\stm32\STM32CubeIDE_1.19.0\STM32CubeIDE\plugins` 中的GCC与Make，脚本中可修改路径。
 
@@ -39,7 +41,7 @@ RM RCT6 stage 1: default motion INHIBITED
 state=2 inhibit=0x07 motor_seen=0 age_ms=... bad=0 unknown=0
 ```
 
-`state`：0禁动、1已解锁、2故障、3软件急停；`inhibit`：0x01配置未核实、0x02遥控无效/超时、0x04电机反馈无效/超时、0x08传输故障、0x10急停、0x20调度迟滞，可按位叠加。无遥控、无驱动时0x07是预期。
+`state`：0禁动、1已解锁、2故障、3软件急停；`inhibit`：0x01配置未核实、0x02遥控无效/超时、0x04电机反馈无效/超时、0x08传输故障、0x10急停、0x20调度迟滞、0x40机械臂模式，可按位叠加。无遥控、无驱动时0x07是预期。
 
 若无日志，先按[USB_ISP.md](USB_ISP.md)检查数据线、CH340口、COM占用、BOOT0/复位和运行时115200/8N1设置。USB串口不能读取`g_app`内存或设置断点；有SWD探针时才能进一步做这类检查。先把启动日志查清楚，继续保持电机动力断开。
 
@@ -49,7 +51,9 @@ state=2 inhibit=0x07 motor_seen=0 age_ms=... bad=0 unknown=0
 
 上电时固件发送PWM0、查询配置、开累计反馈，并持续发PWM0。缺少反馈时，在禁动状态至少间隔500ms重发上传开关；不会自动设置电机参数或让电机运行。
 
-预期驱动返回合法累计帧后 `motor_seen=1`，`age_ms`保持较小；`inhibit`通常剩0x03。`unknown`可因配置回复增加；`bad`应保持0。未知回复不当作已正确配置的证明。通过CH340终端按[CONSOLE.md](CONSOLE.md)查询计数，手动转接入的单个编码器（确认电源和针序后）观察原始通道值；具备SWD探针时也可观察`g_app.last_packet`。
+预期驱动返回合法累计帧后 `motor_seen=1`，`age_ms`保持较小；`inhibit`通常剩0x03。`unknown`只统计未知`$...#`封包，普通配置行不计入；`bad`应保持0。通过CH340终端按[CONSOLE.md](CONSOLE.md)查询计数，手动转接入的单个编码器（确认电源和针序后）观察原始通道值；具备SWD探针时也可观察`g_app.last_packet`。
+
+在终端先发`driver read`，等驱动回复，再发`driver info`及r6新增`driver safety`。记录实际版本、mtype、deadzone、mline、mphase及diameter_mm，核对驱动轮径是否为80mm，其他值按实际电机资料核对；PID未解析，需另行核对。行驶前diameter_match必须为1；驱动晚启动导致首次查询丢失时，停车后重新driver read，上传开关重试不会替代配置查询。`fields=0x3F`只表示收到六字段，不是配置正确或运动验收通过。普通配置行和MSPD都不刷新链路健康，不自动写参数，详见[驱动资料依据](DRIVER_REFERENCE.md)。
 
 断开驱动TX→主控RX，200ms后电机反馈超时标志应出现。主控仍能运行时会尝试PWM0。**这个试验不能证明主控TX断开后驱动会停机。** 当前无动力联调只能检查报文，不填写运动验收通过。
 
@@ -57,9 +61,9 @@ state=2 inhibit=0x07 motor_seen=0 age_ms=... bad=0 unknown=0
 
 ## 5. 后续运动阶段的前置条件
 
-先完成CONFIG_PENDING.md中的轮几何、通道/方向、速度单位、电机参数、PS2电气与无线断联、驱动独立失联停车记录。
+SPD单位为轮缘mm/s。r8按用户最新要求以SELECT/电脑stop的软件停车验收进行人工看护、四轮架空联调。行驶前完成CONFIG_PENDING.md中的几何、通道/方向、电机参数、PS2及software_stop_verified检查，并通过轮径回读门禁。默认仍禁动，按每阶段实测结果填写配置。
 
-单轮受限PWM标定代码已提供，默认关闭。使用前单独启用`calibration_enabled`，并完成PS2接线、无线失联和驱动独立停车保护的确认；通过`cal arm`和一次`cal pulse`操作，详见CONSOLE.md。它不依赖未知的尺寸/方向/速度单位，但也不能通过把全部verified随便改true来使用。
+单轮受限PWM标定默认关闭。完成PS2接线、无线行为及软件停车检查后，单独启用`calibration_enabled`，使用`cal arm`和一次`cal pulse`，详见CONSOLE.md。单轮标定可先于轮序/方向填写，其他验收仍按实际结果记录。
 
 PS2适配器默认不驱动GPIO。核线后可单独启用 `target/board_hal.h` 的 `RM_PS2_WIRED` 进行遥控读包；仍保持运动配置未解锁，先检查关手柄和断接收器表现。只有已验证的失联标识才能填写相关标志。
 
@@ -67,7 +71,15 @@ PS2还应测试晚供电和重新供电。接收器若回到数字模式，程�
 
 已实现的电脑入口：`board.ps1 -Mode Terminal -Port COM7`交互发指令，`-Mode Monitor -Port COM7`抓日志，`-Mode Analyze -Log ...`解释默认禁动阶段日志。COM7只是示例，改成实物对应的CH340；2026-10-25本机实际为COM5，Monitor日志和Terminal中的version/config回复已取得证据，其他入口按实际执行记录。
 
-真实运动验收：架空单轮→四轮→断两条UART线和复位主控→新按键解锁→低速落地。全过程记录实际结果，硬件急停可达。
+本轮顺序为断电核线、无电机负载验证SELECT/stop、逐项更新标定配置、架空单轮，再核对四轮机械方向。带动力时保持UART线接好，主控复位和断线排查先隔离动力。落地运动另行确认场地和机械参数，本轮先记录架空结果。
+
+## 6. 七路MG995后续联调准备
+
+r5已提供七路PWM及PS2逐路手动控制，但默认`RM_ARM_WIRED=0`且全部通道关闭，参数全零。当前先用`arm`、`servo 1`等只读查询确认版本与缺项，不把“代码已写好”理解为可以直接带七台通电动作。
+
+后续先按[ARM_CONTROL.md](ARM_CONTROL.md)核对本批MG995电气资料、独立供电、共地与底盘隔离、防坠落措施和安全初始姿态；按明确的逐路调试流程取得周期、端点、方向与速率，再填写[src/arm_config.c](src/arm_config.c)，只启用已经确认的一路。首次输出可能使舵机转向`start_us`，不能靠限速逻辑消除未知初始位置带来的跳转。
+
+上板前先核实无负载PWM波形；实物许可后按L2、选路、回中和新START的顺序逐路检查，再试R2加右Y调整，记录限位、失联、SELECT、退出模式和复位时表现。保持PWM不等于机械刹车；承重机构的断电/复位保护必须单独验证。本轮未执行这些实物步骤。
 
 ## CubeMX配置清单（用于后续生成，当前未伪造工程）
 
@@ -75,6 +87,6 @@ PS2还应测试晚供电和重新供电。接收器若回到数字模式，程�
 - HSE=Crystal/Ceramic Resonator 8MHz；PLL×9，SYSCLK/HCLK72MHz，APB1/2均36MHz。
 - USART2异步PA2/PA3，115200/8N1/无流控；启用USART2 IRQ。
 - USART1异步PA9/PA10，115200/8N1，调试输出；不要并入电机串口。
-- 不启用主控编码器、TB6612 PWM或舵机/视觉外设。
+- 不启用主控编码器或TB6612 PWM；K210 USART3仍为预留。机械臂默认关闭，确认参数后按[七路引脚表](ARM_CONTROL.md)使用TIM3/TIM4默认映射，不能照搬其他板的定时器分配。
 - PS2 PB12/13/14/15在电气确认前保持未启用。
 - Cube生成UART中断与本工程自定义收包ISR二选一，不重复定义；迁入HAL收包回调时保留长度、时间戳及错误策略。

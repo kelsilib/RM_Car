@@ -2,6 +2,7 @@
  * 用来检查晚开机、断线恢复、重试频率和重新解锁，不接触实物。
  * PS2模型假设接收器复位后回到数字模式；实物是否这样仍需上板测试。 */
 #include "board_hal.h"
+#include "board_servo.h"
 #include "chassis_app.h"
 #include <limits.h>
 #include <setjmp.h>
@@ -21,6 +22,8 @@ typedef struct {
     unsigned uart_error_ms, bad_frame_ms, fail_upload_number, bad_ps2_marker_ms;
     uint32_t start_tick;
     bool verified_config, reject_analog, alternate_idle;
+    bool omit_flash, no_software_stop;
+    unsigned flash_diameter_mm;
     remote_script_t remote_script;
     bool expect_motor_fresh, expect_remote, expect_fault, expect_armed;
     bool expect_initial_motion, expect_rearmed_motion;
@@ -41,6 +44,8 @@ static bool bad_frame_sent, sending_bad_frame, last_control_was_pwm0;
 static bool unsafe_setup, unexpected_motion, premature_rearm;
 static bool initial_motion, rearmed_motion, first_setup_ok;
 static unsigned feedback_position, next_feedback_ms;
+static char flash_reply[48];
+static unsigned flash_position;
 static uint8_t tx_bytes[21], rx_bytes[9];
 static unsigned tx_bits, rx_bits;
 static bool command_high, clock_high, selected, ps2_bus_error;
@@ -72,7 +77,7 @@ static rm_config_t test_config(void)
     rm_config_t c = rm_config_default();
     c.radius_m = 0.05f; c.half_length_m = c.half_width_m = 0.10f;
     c.geometry_verified = c.mapping_verified = c.motor_parameters_verified = true;
-    c.ps2_wiring_verified = c.remote_failsafe_verified = c.driver_failsafe_verified = true;
+    c.ps2_wiring_verified = c.remote_failsafe_verified = c.software_stop_verified = true;
     c.speed_unit = RM_SPEED_MM_S;
     for (unsigned i = 0; i < RM_WHEELS; ++i) c.direction[i] = 1;
     return c;
@@ -150,6 +155,14 @@ static void delay_bus(void *ctx, uint32_t us) { (void)ctx; advance(us); }
 static const rm_ps2_bus_t bus = {NULL, select_bus, clock_bus, command_bus, data_bus, delay_bus};
 
 bool board_init(void) { return true; }
+bool board_servo_init(const rm_arm_config_t *c) { (void)c; return false; }
+bool board_servo_apply(const uint16_t pulse_us[RM_SERVOS], uint8_t mask)
+{
+    /* 原有底盘场景没有给机械臂验收许可，因此新接口只能看到全零。 */
+    if (mask) unexpected_motion = true;
+    for (unsigned i=0; i<RM_SERVOS; ++i) if (pulse_us[i]) unexpected_motion = true;
+    return mask == 0;
+}
 uint32_t board_millis(void)
 {
     advance(1000);
@@ -173,6 +186,12 @@ bool board_motor_send(const char *frame)
         if (ms >= scenario->motor_ready_ms) upload_enabled = true;
     } else if (!strcmp(frame, "$read_flash#")) {
         ++reads_of_flash;
+        if (!scenario->omit_flash && ms >= scenario->motor_ready_ms) {
+            unsigned mm=scenario->flash_diameter_mm ? scenario->flash_diameter_mm :
+                (scenario->verified_config ? 100u : 80u);
+            (void)snprintf(flash_reply,sizeof flash_reply,"wheel_diameter:%u.000\r\n",mm);
+            flash_position=0;
+        }
     } else {
         last_control_was_pwm0 = !strcmp(frame, "$pwm:0,0,0,0#");
         bool speed = !strncmp(frame, "$spd:", 5);
@@ -207,6 +226,9 @@ bool board_motor_read(uint8_t *byte, uint32_t *at)
 {
     static const char good[] = "$MAll:0,0,0,0#";
     static const char bad[] = "$MAll:1,2,3#";
+    if (flash_reply[flash_position]) {
+        *at=tick(); *byte=(uint8_t)flash_reply[flash_position++]; return true;
+    }
     if (!upload_enabled || elapsed_ms() < next_feedback_ms) return false;
     if (!feedback_position && scenario->bad_frame_ms && elapsed_ms() >= scenario->bad_frame_ms && !bad_frame_sent) {
         sending_bad_frame = true;
@@ -259,6 +281,7 @@ bool board_ps2_start(void)
 {
     if (!setups && scenario->verified_config) {
         g_app.config = test_config();
+        if (scenario->no_software_stop) g_app.config.software_stop_verified=false;
         g_app.config.calibration_enabled=scenario->enable_calibration;
     }
     if (setups) {
@@ -300,6 +323,7 @@ static bool run_scenario(const scenario_t *test)
     unsafe_setup = unexpected_motion = premature_rearm = false;
     initial_motion = rearmed_motion = first_setup_ok = false;
     feedback_position = next_feedback_ms = 0;
+    flash_reply[0]='\0'; flash_position=0;
     console_position=cal_started_ms=cal_stopped_ms=0;
     calibration_moved=cal_running=saw_ps2=saw_counts=false;
     debug_failed=false;
@@ -345,6 +369,12 @@ int main(void)
     const scenario_t cases[] = {
         {.name="production config stays stopped", .remote_script=DRIVE,
          .expect_motor_fresh=true, .expect_remote=true},
+        {.name="software stop acceptance missing keeps motion inhibited", .verified_config=true,
+         .no_software_stop=true,.remote_script=DRIVE,.expect_motor_fresh=true,.expect_remote=true},
+        {.name="missing flash diameter blocks speed output", .verified_config=true,
+         .omit_flash=true,.remote_script=DRIVE,.expect_motor_fresh=true,.expect_remote=true},
+        {.name="mismatched flash diameter blocks speed output", .verified_config=true,
+         .flash_diameter_mm=67,.remote_script=DRIVE,.expect_motor_fresh=true,.expect_remote=true},
         {.name="normal drive has no repeated setup", .verified_config=true, .remote_script=DRIVE,
          .expect_motor_fresh=true, .expect_remote=true, .expect_armed=true,
          .expect_initial_motion=true, .expect_rearmed_motion=true},

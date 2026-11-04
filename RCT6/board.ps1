@@ -9,11 +9,12 @@ param(
     [string]$Log,
     [string]$Command,
     [switch]$RequireBoot,
+    [ValidateSet('UART','SWD')][string]$Interface = 'UART',
     [ValidatePattern('^[A-Za-z0-9]+$')][string]$ProbeSerial
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-$boardTools = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'tools\board-tools.json') -Raw | ConvertFrom-Json
+$boardTools = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'tools\board-tools.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $boardConfig = Join-Path $PSScriptRoot 'openocd\stlink-rct6.cfg'
 . (Join-Path $PSScriptRoot 'tools\console_reply.ps1')
 
@@ -86,48 +87,64 @@ try {
     if ($Mode -eq 'Test') {
         $boardCode = Invoke-BoardPython -PythonArgs @((Join-Path $PSScriptRoot 'tests\test_log_tools.py'))
         if ($boardCode -ne 0) { exit $boardCode }
+        $boardCode = Invoke-BoardPython -PythonArgs @((Join-Path $PSScriptRoot 'tests\test_preflight_tools.py'))
+        if ($boardCode -ne 0) { exit $boardCode }
         & (Join-Path $PSScriptRoot 'tests\test_console_reply.ps1')
         exit 0
     }
     if ($Mode -eq 'Check') {
         $boardMissing = @()
-        foreach ($boardName in @('openocd','programmer','python','openocd_scripts')) {
+        $boardRequiredTools = @('programmer','python')
+        if ($Interface -eq 'SWD') { $boardRequiredTools += @('openocd','openocd_scripts') }
+        foreach ($boardName in $boardRequiredTools) {
             $boardPath = $boardTools.$boardName
             if (-not (Test-Path -LiteralPath $boardPath)) { $boardMissing += $boardName }
         }
         if ($boardMissing.Count) { throw "找不到工具：$($boardMissing -join ', ')。请更新tools\board-tools.json里的路径。" }
-        # shutdown在配置阶段直接结束，不执行init，所以这里不会连接或复位目标板。
-        $boardParse = Invoke-BoardOpenOcd @('echo RM_CONFIG_OK', 'shutdown')
-        if ($boardParse.ExitCode -ne 0 -or ($boardParse.Output -join "`n") -notmatch 'RM_CONFIG_OK') {
-            throw "OpenOCD配置读取失败：$($boardParse.Output -join ' ')"
+        $boardProbes = [pscustomobject]@{ Serials=@() }
+        $boardConfigParsed = $false
+        if ($Interface -eq 'SWD') {
+            # shutdown在配置阶段结束，保留原有SWD检查入口。
+            $boardParse = Invoke-BoardOpenOcd @('echo RM_CONFIG_OK', 'shutdown')
+            if ($boardParse.ExitCode -ne 0 -or ($boardParse.Output -join "`n") -notmatch 'RM_CONFIG_OK') {
+                throw "OpenOCD配置读取失败：$($boardParse.Output -join ' ')"
+            }
+            $boardConfigParsed = $true
+            $boardProbes = Get-BoardProbes
         }
-        $boardProbes = Get-BoardProbes
         $boardPorts = @()
-        if (Get-Command Get-PnpDevice -ErrorAction SilentlyContinue) {
-            $boardPorts = @(Get-PnpDevice -Class Ports -PresentOnly -ErrorAction SilentlyContinue |
-                Select-Object FriendlyName,InstanceId,Status)
-        } else {
-            $boardPorts = @([IO.Ports.SerialPort]::GetPortNames() | ForEach-Object {
-                [pscustomobject]@{ FriendlyName=$_; InstanceId=''; Status='unknown' }
-            })
+        # 只枚举端口。CubeProgrammer的UART列表包含CH340名称，也避免CIM访问失败。
+        $boardUartList = @(& $boardTools.programmer -l uart 2>&1 | ForEach-Object { "$_" })
+        if ($LASTEXITCODE -ne 0) { throw 'UART端口枚举失败。' }
+        foreach ($boardPortName in [IO.Ports.SerialPort]::GetPortNames()) {
+            $boardPorts += [pscustomobject]@{ FriendlyName=$boardPortName; Status='enumerated' }
         }
-        $boardProfile = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'PROJECT_PROFILE.json') -Raw | ConvertFrom-Json
-        $boardManifest = Get-Content -LiteralPath (Join-Path $PSScriptRoot $boardProfile.latest_artifact_report) -Raw | ConvertFrom-Json
+        $boardProfile = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'PROJECT_PROFILE.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+        $boardManifest = Get-Content -LiteralPath (Join-Path $PSScriptRoot $boardProfile.latest_artifact_report) -Raw -Encoding UTF8 | ConvertFrom-Json
         $boardBin = Join-Path $PSScriptRoot 'build\rm_rct6.bin'
         $boardHash = (Get-FileHash -LiteralPath $boardBin -Algorithm SHA256).Hash.ToLowerInvariant()
+        # 历史记录使用sha256，r6和本次记录按default保存各构建的哈希。
+        if ($boardManifest.PSObject.Properties['default']) { $boardDefaultArtifact = $boardManifest.default }
+        elseif ($boardManifest.PSObject.Properties['sha256']) { $boardDefaultArtifact = $boardManifest }
+        else { throw '产物记录缺少默认构建的SHA256。' }
+        $boardExpectedHash = $boardDefaultArtifact.sha256.'rm_rct6.bin'
+        if ($boardExpectedHash -notmatch '^[0-9a-fA-F]{64}$') { throw '默认BIN的SHA256格式不正确。' }
         $boardReport = [ordered]@{
-            checked_at_utc=[DateTime]::UtcNow.ToString('o'); tools_ready=$true; config_parsed=$true;
-            firmware_hash_matches_last_verification=($boardHash -eq $boardManifest.sha256.'rm_rct6.bin');
+            checked_at_utc=[DateTime]::UtcNow.ToString('o'); tools_ready=$true; interface=$Interface;
+            swd_config_parsed=$boardConfigParsed;
+            firmware_hash_matches_last_verification=($boardHash -eq $boardExpectedHash);
             stlink_serials=@($boardProbes.Serials); serial_ports=$boardPorts;
+            uart_inventory=$boardUartList;
             target_connected=$false; flashed=$false; hardware_tested=$false;
             note='Check只枚举USB和读取配置，不连接目标MCU。没有设备时也能完成工具检查。'
         }
-        $boardReport | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8 (Join-Path $PSScriptRoot 'reports\host-check.json')
-        Write-Host '工具和OpenOCD配置已就绪。'
+        $boardHostReport = Join-Path $PSScriptRoot ('reports\host-check-' + [Guid]::NewGuid().ToString('N').Substring(0,8) + '.json')
+        $boardReport | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8 $boardHostReport
+        Write-Host "${Interface}工具检查完成。报告已保存到$boardHostReport"
         Write-Host "固件与上次验证的哈希一致：$($boardReport.firmware_hash_matches_last_verification)"
-        Write-Host "检测到ST-Link数量：$($boardProbes.Serials.Count)"
+        if ($Interface -eq 'SWD') { Write-Host "检测到ST-Link数量：$($boardProbes.Serials.Count)" }
+        $boardUartList | ForEach-Object { Write-Host $_ }
         foreach ($boardItem in $boardPorts) { Write-Host "串口：$($boardItem.FriendlyName)" }
-        if (-not $boardProbes.Serials.Count) { Write-Host '当前没有ST-Link，实物验证待接板后进行。' }
         if (-not $boardReport.firmware_hash_matches_last_verification) {
             throw '当前BIN与上次验证记录不同，需要先重新验证固件，不能沿用旧的成功记录。'
         }

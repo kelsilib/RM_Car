@@ -1,0 +1,14 @@
+{
+  "source_original_files_unchanged": true,
+  "HAL_and_references_unchanged": true,
+  "r7_archive_hashes_match": true,
+  "r8_artifact_hashes_match": true,
+  "source_inputs_hashed": 171,
+  "json_files_parsed": 37,
+  "markdown_links_checked": 19,
+  "broken_links": [],
+  "main_and_legacy_feature_trees_equal": true,
+  "staging_area_empty": true,
+  "flashed": false,
+  "hardware_tested": false
+}

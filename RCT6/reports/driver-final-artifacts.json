@@ -1,0 +1,153 @@
+{
+  "date": "2026-11-02",
+  "firmware_id": "rm_rct6-driver-final-20261102-r6",
+  "git_base": "d1fcb37b4e0640aaf22289fb503d845ec26cc864",
+  "working_tree_uncommitted": true,
+  "default": {
+    "flash_bytes": 26052,
+    "ram_including_reserves_bytes": 9376,
+    "initial_stack": "0x2000c000",
+    "reset_vector": "0x8004e3d",
+    "uart1_vector": "matched",
+    "uart2_vector": "matched",
+    "systick_vector": "matched",
+    "hex_bin_equal": true,
+    "scope": "artifact_structure_only",
+    "sha256": {
+      "rm_rct6.bin": "9308cf17cd17d5ba303be39f9b2d656d6c15179c77090a75237706f01074023d",
+      "rm_rct6.elf": "34527b9cb79a445fec3b7350acd6c9abe78cfb7794bc9d489121dd53761ab0df",
+      "rm_rct6.hex": "7d1151ef97659a5cedc79b351bd4ee7354c1e688fddd94daf31290dd8c7596a6"
+    },
+    "flashed": false,
+    "hardware_tested": false
+  },
+  "enabled_interfaces_variant": {
+    "flash_bytes": 29012,
+    "ram_including_reserves_bytes": 9632,
+    "initial_stack": "0x2000c000",
+    "reset_vector": "0x8005961",
+    "uart1_vector": "matched",
+    "uart2_vector": "matched",
+    "systick_vector": "matched",
+    "hex_bin_equal": true,
+    "scope": "artifact_structure_only",
+    "sha256": {
+      "rm_rct6.bin": "e837a1cf80c39de70ddfd8460c59444b804e2c1fe0ff9887e455962979dde5a4",
+      "rm_rct6.elf": "ecb4e655dc0dda450722f28c7d92335c8939bb23aca7919e5e84336dd8460c67",
+      "rm_rct6.hex": "fe463b3acac6243b64693fdafd813b68168f21b4ec53ce03a601bf4d7e8e6ad2"
+    },
+    "flashed": false,
+    "hardware_tested": false
+  },
+  "pc_tests": {
+    "core_assertions": 129334,
+    "startup_scenarios": 32,
+    "service_assertions": 555,
+    "ps2_checks": 6580,
+    "arm_assertions": 42651,
+    "arm_main_scenarios": 11,
+    "log_tests": 17,
+    "console_reply_checks": 43
+  },
+  "static_analysis": {
+    "tool": "ARM GCC -fanalyzer -c",
+    "diagnostics": 0,
+    "warnings_as_errors": true,
+    "sources": [
+      "src/board_config.c",
+      "src/motor_uart.c",
+      "src/chassis_app.c",
+      "src/console.c",
+      "src/safety.c",
+      "src/calibration.c",
+      "target/main.c"
+    ]
+  },
+  "tool_versions": {
+    "arm_gcc": "arm-none-eabi-gcc.exe (GNU Tools for STM32 13.3.rel1.20240926-1715) 13.3.1 20240614",
+    "make": "GNU Make 4.4.1_st_20231030-1220",
+    "host_gcc": "gcc.exe (GCC) 16.2.0",
+    "python": "3.12.14"
+  },
+  "firmware_inputs_sha256": {
+    "include/arm_control.h": "2c1acddd6fee54fc9b2cb06949748ad5523785443fea2e7fbfd7c34202cf9db7",
+    "include/board_config.h": "be115cf8981417aaa6fe6d6af2d3d272aecfd9d0e9af39b1816101463bf0c6ce",
+    "include/calibration.h": "39ca79b704b9a23ab677c2fad1f596ee44f308f0a6eeb3e2ac3e2aed2a2f4eed",
+    "include/chassis_app.h": "6759b681d189ebe9a177f7904ea8c2b2a1f3856dccf362f30ba412f69d3e1531",
+    "include/console.h": "7e2773e4ebcf40d0faf88e35181cc83b7d06cf7212194b7fe22ae8c2c41180e0",
+    "include/firmware_version.h": "be39f50e1cc25b7b0e6dfd99e47959833f65755ffbdecff27dd0595612a7cb00",
+    "include/mecanum.h": "c4637cca4b1c79ab3789f4110bb896f313ea3aa743bbab35ab5313e2e720d6f3",
+    "include/motor_uart.h": "4abd300212df4001c68b12b46bbd942f9ac0d5fd24d79fd6e7176c38f8639bbe",
+    "include/remote_ps2.h": "eb0c1a442d988f4af227e8adec3fe6c3b5e3da0db43dd90e99787fe0776ffed6",
+    "include/safety.h": "08db5603000078289ea0d0a36ddc5223387689ea910eca4b4db7d319818a8b53",
+    "Makefile": "18a54d32addb61e9f89f7e7c0799f358953f7a6cbd6b66c42454fa94c404741e",
+    "src/arm_config.c": "66b5e4660e2d49838486695ab96b033157dfc9928a0cbd2b86dd9ac418252a80",
+    "src/arm_control.c": "b38d7437adf9e44517709d44ee1652640bcb0841777f6a0bcef3f51b84609c1b",
+    "src/board_config.c": "4de40378463c0a3db7edbf281e6405b3452cf7b75c9f8eb4577bdb8bb30eac2a",
+    "src/calibration.c": "19b792fddcd093f90692beaf42eeffb03f1000c4efc08efd5086d8749dca8422",
+    "src/chassis_app.c": "a65630098cecaf0b4d7fae1fe488afe429ed935871c9ad0984f371cf5159f95d",
+    "src/console.c": "913a9f8ff6387d10bb7c3563ff7353c115a98ea53c3722c009493fb71dda4701",
+    "src/mecanum.c": "c7601798b3dc84cd471c45a88ab42ccb7f2b705dd6f210c9b8e9315cdc4acaee",
+    "src/motor_uart.c": "a16213ebafcea5f4749b0df771db0a689de2cc9cd8a61ec1e0dfcad15b4db584",
+    "src/remote_ps2.c": "5fcb67f3bc975d6211ec3a047c7c76760445b7ebc113ab2d7984ae08c1663f5e",
+    "src/safety.c": "b956c8f08a0fe4c33ba3802f17efeaaf54ee74e92d4ea8d9cefeceab09af9ee4",
+    "target/board_hal.c": "1b8518028068ba4d7bf7dfd73d631040b6f1ff478ea0682bb92aab0b8d78de46",
+    "target/board_hal.h": "61fba28453aaba90ce9b927525ac026f5f4759cc5302e371eb9e54da78be3370",
+    "target/board_servo.c": "4043b9c3c3424714ee77088f6cd65fb5c8d9e6cb465165f734a9f5563f2c9b2b",
+    "target/board_servo.h": "8dad9d90f0c27c1651cdfd2c49e534185e85c5a890d27af2453d780738b2b4ac",
+    "target/interrupts.c": "e3eadb50826321c8d77bfeef5ef85f3baea618b062031d71be0032c150a548f2",
+    "target/main.c": "c68008ac09ef5af781c701e3fd5125c31b6188df892867567739dc19591f17cf",
+    "target/startup_stm32f103xe.s": "04d6550310b491d5d8ad4de87b9cecb631b5ba5a284340e31bc94e0d05e4230b",
+    "target/STM32F103RCTX_FLASH.ld": "631b30f0da6838cda518e0168800220ab0c3ead0d7cd2a6890fdfcea9dee9ab4",
+    "target/stm32f1xx_hal_conf.h": "9d250e85225b711a0c3e89c9b86574194d8bca65a5b65d71b700f86829935a4a",
+    "target/syscalls.c": "f3fd3449b1b4060bd8fe01b76faa2292ab81e979eef2e6439f907c48f072bc98"
+  },
+  "test_inputs_sha256": {
+    "tests/test_arm.c": "40e9f20b742b71eb73eb3dbbaa5c6b969a7ba1f194bc4078c503c7f25f3a04aa",
+    "tests/test_arm_main.c": "999fb5a27d9b0d5b265283a94931d953fb070b8c89b66230bc07b571343e4150",
+    "tests/test_console_reply.ps1": "b3159dbee45e444db1fd69cf7dbf17549631cf0881d754a8aac2bb9a1ec01a7a",
+    "tests/test_core.c": "aa0e458c948e40fbdad9b7c802e83f73dc35aebb56a0d2627b8a17276c041254",
+    "tests/test_log_tools.py": "66c599308fb7f53478750fa24499d414b32052f7d2758d2a017c76c5bd06a582",
+    "tests/test_ps2.c": "0f6f469863ba6212e90f52041b57d7abf5e7b7604f3383c500ca02d241f3cf4c",
+    "tests/test_service.c": "1faf30c03f04ec37f638f6a2c211bfbb6425cbce9f047ec517456dc12bc6f7bd",
+    "tests/test_startup.c": "57d4e0ee3ac08eb55a9bee89b899c172a3acce230ec73e9a101ae937bd57b63c"
+  },
+  "tool_inputs_sha256": {
+    "build.ps1": "e60fe400b1baae1253ec562fc351d992cb2c62e889132ddd483439211365256e",
+    "board.ps1": "5f62ec5d2e6d272a6df42a7025a5d4467cdcf6793619efe0f0de5e3d2517df8c",
+    "tools/console_reply.ps1": "24cb004f2a677263e737ca54ca206dc7de7d97ef0d755b09c3ae9fef6bdee747",
+    "tools/verify_firmware.py": "fcfba1aacb929f56a6eb453b787429c5124110624503c9fdae1d2188bd88ba7d"
+  },
+  "protocol_confirmation": {
+    "source": "User message on 2026-11-02; original vendor response not attached",
+    "spd_unit": "wheel rim mm/s; affected by wdiameter; not output-shaft rpm",
+    "command_loss": "holds last SPD/PWM; no automatic stop; no timeout configuration"
+  },
+  "independent_stop_verified": false,
+  "driver_diameter_gate": true,
+  "motion_enabled_by_default": false,
+  "calibration_enabled": false,
+  "arm_wired_by_default": false,
+  "ps2_wired_by_default": false,
+  "last_hardware_verified_firmware": "rm_rct6-chassis-20261023-r1",
+  "protected_files_unchanged": [
+    "src/arm_config.c",
+    "src/arm_control.c",
+    "src/remote_ps2.c",
+    "target/main.c",
+    "target/board_hal.c",
+    "target/board_hal.h",
+    "target/board_servo.c",
+    "target/board_servo.h",
+    "target/stm32f1xx_hal_conf.h",
+    "Makefile"
+  ],
+  "flashed": false,
+  "hardware_tested": false,
+  "final_comment_format_checks": {
+    "core_assertions": 129334,
+    "arm_assertions": 42651,
+    "console_reply_checks": 43,
+    "note": "Only test comments and a mixed line ending changed after the full regression; affected executables and reply checks rerun."
+  }
+}

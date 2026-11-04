@@ -18,6 +18,9 @@ void rm_app_init(rm_app_t *a, const rm_config_t *c, uint32_t now)
     a->config = *c;
     a->last_step_ms = now;
     rm_motor_parser_init(&a->parser);
+    rm_driver_info_init(&a->driver_info);
+    rm_arm_config_t arm_config = rm_arm_config_default();
+    rm_arm_init(&a->arm, &arm_config, now);
     rm_safety_init(&a->safety);
 }
 
@@ -26,6 +29,9 @@ void rm_app_receive(rm_app_t *a, uint8_t byte, uint32_t now)
     rm_motor_packet_t packet;
     uint32_t malformed = a->parser.malformed;
     uint32_t unknown = a->parser.unknown;
+    /* 由原来的报文解析器判断本字节是否属于封包，避免把封包内的字样当成配置。
+     * 配置文本仅供driver info查看，不能证明运动指令已送达，也不刷新motor_at_ms。 */
+    rm_driver_info_feed(&a->driver_info, byte, now, a->parser.collecting || byte == '$');
     if (rm_motor_feed(&a->parser, byte, now, &packet)) {
         a->last_packet = packet;
         /* 只有完整、正确的MAll编码器包才算“最近收到过电机反馈”。
@@ -40,7 +46,7 @@ void rm_app_receive(rm_app_t *a, uint8_t byte, uint32_t now)
             a->battery_at_ms = now;
         }
     }
-    /* 厂商配置回复的字段格式还未实测，因此先保留完整原文，不能猜字段再自动放行。 */
+    /* 保留原来的未知封包查询；不带$和#的配置行由driver_info另外记录。两者都不放行运动。 */
     if (a->parser.unknown != unknown) {
         size_t length = a->parser.length;
         a->driver_reply[0] = '$';
@@ -57,6 +63,7 @@ void rm_app_receive(rm_app_t *a, uint8_t byte, uint32_t now)
 void rm_app_transport_fault(rm_app_t *a)
 {
     a->transport_fault = true;
+    rm_arm_stop(&a->arm);
     rm_cal_cancel(&a->calibration);
     a->safety.state = a->estop_active ? RM_ESTOP : RM_FAULT;
     a->safety.inhibit |= RM_INHIBIT_TRANSPORT;
@@ -66,7 +73,7 @@ void rm_app_transport_fault(rm_app_t *a)
     a->last_speed_mode = false;
 }
 
-void rm_app_stop(rm_app_t *a)
+static void stop_chassis(rm_app_t *a)
 {
     rm_cal_cancel(&a->calibration);
     rm_safety_init(&a->safety);
@@ -82,9 +89,15 @@ void rm_app_stop(rm_app_t *a)
     a->last_speed_mode = false;
 }
 
+void rm_app_stop(rm_app_t *a)
+{
+    stop_chassis(a);
+    rm_arm_stop(&a->arm); /* SELECT/电脑stop冻结机械臂，不能把承重舵机突然卸力。 */
+}
+
 bool rm_app_output_active(const rm_app_t *a)
 {
-    return a->safety.state == RM_ARMED || a->safety.state == RM_CALIBRATING ||
+    return a->arm.mode || a->arm.armed || a->safety.state == RM_ARMED || a->safety.state == RM_CALIBRATING ||
         a->calibration.state != RM_CAL_OFF;
 }
 
@@ -99,7 +112,7 @@ static rm_safety_input_t safety_input(const rm_app_t *a, uint32_t now, bool esto
 
 bool rm_app_cal_arm(rm_app_t *a, uint32_t now)
 {
-    if (a->safety.state == RM_ARMED) return false;
+    if (a->arm.mode || a->arm.armed || a->safety.state == RM_ARMED) return false;
     rm_safety_input_t input = safety_input(a, now, a->estop_active);
     if (!rm_cal_arm(&a->calibration, &a->config, &input, now)) return false;
     rm_safety_init(&a->safety);
@@ -143,6 +156,17 @@ bool rm_app_step(rm_app_t *a, uint32_t now, bool estop, char *frame, size_t cap)
     a->last_step_ms = now;
     /* 不允许动就直接发PWM0，并忘掉上次速度；停车指令不等待缓慢减速。 */
     const int32_t zero[RM_WHEELS] = {0};
+    bool was_arm_mode = a->arm.mode;
+    bool arm_mode = (a->remote.buttons & RM_PS2_L2) != 0;
+    if (arm_mode || was_arm_mode) {
+        /* 进入或离开机械臂模式，都撤销底盘/单轮许可。切回底盘不能沿用按住的START。 */
+        stop_chassis(a);
+        a->safety.inhibit |= rm_safety_health(&a->config, &input, now);
+        if (arm_mode) a->safety.inhibit |= RM_INHIBIT_ARM_MODE;
+    }
+    rm_arm_step(&a->arm, &a->config, &a->remote, now, estop, !a->transport_fault,
+                a->servo_hardware_ready, elapsed <= 100u);
+    if (arm_mode || was_arm_mode) return output(a, false, zero, frame, cap);
     /* 单轮标定也走同一输出口。结束、取消或丢失保护条件时，本轮直接归零。
      * state=4专门表示标定，不能把它误认为普通禁动，也不能自动转进整车行驶。 */
     bool was_calibrating = a->safety.state == RM_CALIBRATING || a->calibration.state != RM_CAL_OFF;
@@ -174,7 +198,13 @@ bool rm_app_step(rm_app_t *a, uint32_t now, bool estop, char *frame, size_t cap)
         }
         return output(a, false, channel, frame, cap);
     }
-    if (!rm_safety_step(&a->safety, &a->config, &input, now)) {
+    /* 不能只改主控半径就认为驱动也已保存同一轮径。缺回读或轮径不一致时，
+     * 本轮临时按“电机参数未就绪”检查；不改用户的验收记录，不自动写驱动Flash。
+     * 单轮PWM标定不经过这里，使用遥控、反馈与软件停车等前置检查。 */
+    rm_config_t checked_config = a->config;
+    checked_config.motor_parameters_verified = a->config.motor_parameters_verified &&
+        rm_driver_diameter_matches(&a->driver_info, &a->config);
+    if (!rm_safety_step(&a->safety, &checked_config, &input, now)) {
         a->ramp = (rm_twist_t){0};
         memset(a->last_wheel, 0, sizeof a->last_wheel);
         return output(a, false, zero, frame, cap);

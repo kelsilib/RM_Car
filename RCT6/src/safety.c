@@ -44,7 +44,8 @@ bool rm_safety_step(rm_safety_t *s, const rm_config_t *c,
     bool rising = r->arm && !s->previous_arm;
     s->previous_arm = r->arm;
     /* 第二步：有一个条件不满足就禁止运动，之前回中、松键的记录也清掉。
-     * 调用者会发送PWM0。若主控死机或发送线断了，还要靠驱动自身的停车保护。 */
+     * 调用者会尝试发送PWM0。本驱动不会超时停车；主控死机或命令TX线断开时，
+     * 这些文字可能送不到。人工看护的架空联调中，异常时先隔离电机动力再排查。 */
     if (reason) {
         s->state = in->estop ? RM_ESTOP :
             ((reason == RM_INHIBIT_CONFIG) ? RM_DISARMED : RM_FAULT);

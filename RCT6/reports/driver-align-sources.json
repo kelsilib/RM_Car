@@ -1,0 +1,26 @@
+{
+  "source_folder": "C:\\Users\\fakel\\Downloads\\驱动板",
+  "sha256": {
+    "5.通信协议/串口通信协议.xlsx": "8ac0536b067532497aba9417997134be1f5e15d098667f3e54d0d4ee2ba488c8",
+    "5.通信协议/IIC通信协议.xlsx": "ca6eb263bae59860a9f1949dc0a5723f0d1b70a06010269c73b76b2d968766ab",
+    "3.程序源码/固件/FourWay_Motor_STM32.hex": "4f6d6857e8c849a6010c9ff7b3c634432fe4a4ed368ba1f746ed7245c1a1e287",
+    "3.程序源码/STM32/CarMove_USART/USER/main.c": "b6dfea0aaf7781248358b58ec2bb6e4160840d9abf6022f23227d50051070a64",
+    "3.程序源码/STM32/CarMove_USART/BSP/motor_model/app_motor_usart.c": "1ea6c8fae58862282420c2b17b1380dea684a85e0a5b5c2bb9aeb77769158852",
+    "3.程序源码/STM32/CarMove_USART/BSP/motor_model/app_motor_usart.h": "5faf912a828657cd9ae9fd3cc98ac8db605c57cc2431d619fe213d87cbb7afe9",
+    "3.程序源码/树莓派5/USART/USART.py": "561558200ed6c2c0a64703b00b55c18e6784eeec122b72f7774ad803ef2c2f37",
+    "2.驱动资料/PC上位机/串口通讯.pdf": "e3b9fde3743623c38e98e7654be1633cb3bfc43ef83d9c55a8f092d981a7d74b",
+    "2.驱动资料/STM32/USART/小车控制与编码器读取-USART.pdf": "964b418afd11e6505afb4a4fd4769fc03eb964c805cfcb53ad72f3d766b96056"
+  },
+  "serial_sheet": {
+    "sheet": "Sheet1",
+    "speed_command": "A36:G36",
+    "pwm_command": "A42:G42",
+    "upload": "A49:G49",
+    "query": "A57:G60"
+  },
+  "conflicts": [
+    "G14 incorrectly calls mline a reduction ratio; STM32 app_motor_usart.c lines 33-44 distinguish mline and mphase",
+    "E42 uses spd as the PWM example; A42, official PDF and STM32 source use pwm"
+  ],
+  "driver_hex_scope": "Format strings read statically; not proof this version is installed on the user's driver"
+}

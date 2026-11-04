@@ -6,6 +6,7 @@
  * 这份main是本工程自己的入口，不能和CubeMX生成的另一个main一起编译。
  */
 #include "board_hal.h"
+#include "board_servo.h"
 #include "chassis_app.h"
 #include "console.h"
 #include "firmware_version.h"
@@ -30,7 +31,9 @@ static bool cancel_calibration_on_console_fault(void)
 {
     if (!board_debug_fault() && !g_console.failed) return false;
     if (!g_console.failed) rm_console_fault(&g_console);
-    if (g_app.safety.state != RM_CALIBRATING && g_app.calibration.state == RM_CAL_OFF) return false;
+    bool arm_active = g_app.arm.armed || g_app.arm.output_mask != g_app.arm.applied_mask;
+    rm_arm_fault(&g_app.arm); /* 撤销新目标并保持上次已写入值；电脑故障后也不能再解锁机械臂。 */
+    if (!arm_active && g_app.safety.state != RM_CALIBRATING && g_app.calibration.state == RM_CAL_OFF) return false;
     rm_app_stop(&g_app);
     return true;
 }
@@ -110,6 +113,8 @@ int main(void)
     rm_config_t config = rm_config_default();
     rm_app_init(&g_app, &config, board_millis());
     rm_console_init(&g_console);
+    /* 默认配置和RM_ARM_WIRED均不允许舵机输出；初始化失败只锁住机械臂，不误放行它。 */
+    g_app.servo_hardware_ready = board_servo_init(&g_app.arm.config);
 
     /* 3. 查询驱动的已有参数，并请求上传累计编码器数据。
      * 查询只发一次；上传开关如果没生效，下面的重试流程会再发。 */
@@ -139,12 +144,23 @@ int main(void)
             /* 读手柄要花几毫秒，其间电脑RX可能出错。先撤销标定，再生成本轮输出。 */
             (void)cancel_calibration_on_console_fault();
             char frame[48];
-            /* false表示还没接物理急停状态输入。独立切断动力的开关仍需另外落实。 */
+            /* false表示未接物理急停状态GPIO。当前用户选择SELECT/电脑stop软件急停。 */
             if (!rm_app_step(&g_app, board_millis(), false, frame, sizeof frame) ||
                 !send_motor(frame)) {
                 rm_app_transport_fault(&g_app);
                 (void)send_motor("$pwm:0,0,0,0#");
             } else {
+                /* 电机停车命令先发出，再允许舵机更新。发送期间也可能刚发生UART故障。
+                 * 此处撤销尚未写入的脉宽，不能在下一轮又把它补发出去。 */
+                if (board_uart_fault()) rm_app_transport_fault(&g_app);
+                (void)cancel_calibration_on_console_fault();
+                uint32_t servo_now = board_millis();
+                if ((uint32_t)(servo_now-g_app.remote.at_ms) > g_app.config.remote_timeout_ms ||
+                    (uint32_t)(servo_now-g_app.arm.last_step_ms) > 100u)
+                    rm_arm_stop(&g_app.arm);
+                if (!board_servo_apply(g_app.arm.pulse_us,g_app.arm.output_mask))
+                    rm_arm_fault(&g_app.arm);
+                else rm_arm_commit(&g_app.arm);
                 /* 先发本轮命令，再考虑重连。retry_links内部还会确认已处于禁动状态。 */
                 retry_links(&motor_retry_at, &ps2_retry_at);
             }

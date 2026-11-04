@@ -12,13 +12,13 @@
 rm_config_t rm_config_default(void)
 {
     const rm_config_t c = {
-        /* 用户确认实物轮径60mm，所以轮半径=60/2000=0.030m，不沿用CAD里的80mm轮。
+        /* 用户更正实物轮径为80mm，所以轮半径=80/2000=0.040m。
          * 前后轮心距141.776179mm、左右轮心距194.101555mm来自装配体/工程图，
-         * 各除以2000得到半轴距和半轮距。换成60mm实物轮后，仍需复核装好后的轮心距。
+         * 各除以2000得到半轴距和半轮距；这些距离继续沿用，装配完成后再核对实物。
          * 车头是底盘凹口端，已核对为CAD的-Z；车体向左为CAD的-X。
          * 这些数值已可用于计算，但不代表验收完成；geometry_verified仍为false。
          * 来源、照片布局和复核方法见GEOMETRY_REFERENCE.md。 */
-        .radius_m = 0.030f,
+        .radius_m = 0.040f,
         .half_length_m = 0.070888089544f, .half_width_m = 0.097050777636f,
         /* 手柄推到底时：平移最多0.15m/s，旋转最多0.5rad/s。先从低速测试。 */
         .max_v_m_s = 0.15f, .max_w_rad_s = 0.5f,
@@ -32,8 +32,9 @@ rm_config_t rm_config_default(void)
         .channel = {0, 2, 1, 3}, .direction = {0, 0, 0, 0},
         /* 超过200ms没收到正确的手柄包或累计编码器包，就禁止运动。 */
         .remote_timeout_ms = 200, .motor_timeout_ms = 200,
-        /* 摇杆放回中间至少300ms后，再新按START。速度单位没确认时仍不能解锁。 */
-        .neutral_hold_ms = 300, .speed_unit = RM_SPEED_UNKNOWN,
+        /* 2026-11-02用户补充确认：SPD是轮缘mm/s，受驱动wdiameter影响，不是轴转速。
+         * 单位已知不等于允许行驶，其他验收和驱动轮径回读仍要通过。 */
+        .neutral_hold_ms = 300, .speed_unit = RM_SPEED_MM_S,
         /* 轮径已由用户确认，轮心距目前是CAD初值；实车尺寸和接线逐项核对后再填true。
          * 照片中的X布局只证明摆放方向，不能代替轮序、电机正反号和失联停车实测。 */
         .geometry_verified = false, .mapping_verified = false,
@@ -41,8 +42,10 @@ rm_config_t rm_config_default(void)
         .motor_parameters_verified = false,
         /* 第一项确认接收器供电和接线；第二项确认关手柄、超距后能可靠停止。 */
         .ps2_wiring_verified = false, .remote_failsafe_verified = false,
-        /* 主控不再发命令、TX线断开或主控复位时，驱动仍能自行停车，实测后才填true。 */
-        .driver_failsafe_verified = false,
+        /* 用户本轮选择SELECT/电脑stop软件急停，今晚由人在旁看护、四轮架空。
+         * 先用断开电机负载的终端检查确认两条路径都撤销许可并输出PWM0，再填true。
+         * 驱动会保持末值，主控停机或TX断线时软件停车命令可能无法送达。 */
+        .software_stop_verified = false,
         /* 标定默认关闭。启用后也只能一次动一个驱动接口，最多100参数单位、200ms。
          * 原始PWM会受驱动死区设置影响，实测前不能当成占空比或功率保证。 */
         .calibration_enabled = false, .calibration_max_pwm = 100, .calibration_max_ms = 200
@@ -86,7 +89,7 @@ uint32_t rm_config_issues(const rm_config_t *c)
     if (!c->motor_parameters_verified) result |= RM_CFG_MOTOR;
     if (!c->ps2_wiring_verified) result |= RM_CFG_PS2;
     if (!c->remote_failsafe_verified) result |= RM_CFG_RADIO;
-    if (!c->driver_failsafe_verified) result |= RM_CFG_DRIVER;
+    if (!c->software_stop_verified) result |= RM_CFG_SOFTWARE_STOP;
     if (c->speed_unit != RM_SPEED_MM_S) result |= RM_CFG_UNIT;
     if (!values_valid(c)) result |= RM_CFG_VALUES;
     return result;
@@ -97,7 +100,7 @@ bool rm_config_motion_ready(const rm_config_t *c) { return rm_config_issues(c) =
 bool rm_config_calibration_ready(const rm_config_t *c)
 {
     return c && c->calibration_enabled && c->ps2_wiring_verified &&
-        c->remote_failsafe_verified && c->driver_failsafe_verified &&
+        c->remote_failsafe_verified && c->software_stop_verified &&
         isfinite(c->deadzone) && c->deadzone >= 0.0f && c->deadzone < 1.0f &&
         c->remote_timeout_ms > 0 && c->remote_timeout_ms <= 1000 &&
         c->motor_timeout_ms > 0 && c->motor_timeout_ms <= 1000 &&

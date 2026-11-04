@@ -33,16 +33,26 @@ Assert-Reply 'unrelated OK is not cal permission' 'cal arm' "reply OK query_queu
 Assert-Reply 'leading zeroes match firmware numbers' 'cal pulse 01 050 0200' "reply OK one_pulse_queued`n" $true
 Assert-Reply 'bare legacy OK rejected' 'stop' "OK stopped; fresh_START_required`n" $false
 Assert-Reply 'unknown command cannot borrow OK' 'unknown' "reply OK stopped; fresh_START_required`n" $false
+Assert-Reply 'driver info rejects unrelated frame reply' 'driver info' "reply driver_reply seen=0 age_ms=0 frame=none`n" $false
+Assert-Reply 'driver safety rejects unrelated info' 'driver safety' "reply driver_info fields=0x00`n" $false
+Assert-Reply 'arm query cannot borrow state reply' 'arm' $status $false
+Assert-Reply 'servo out of range rejected' 'servo 8' "reply servo channel=8 enabled=0`n" $false
+Assert-Reply 'servo channel must match' 'servo 1' "reply servo channel=2 enabled=0`n" $false
+Assert-Reply 'servo leading zero accepted' 'servo 01' "reply servo channel=1 enabled=0`n" $true
 
 $pairs = @(
     @('help','help version status ps2'),
     @('ps2','ps2 valid=1 fwd=0 left=0 yaw=0 start=0 select=0 age_ms=1'),
+    @('arm','arm mode=0 armed=0 channel=1 outputs=0x00 pulse_us=0 issues=0x7F inhibit=0x061 hw=0 io_fault=0'),
+    @('servo 1','servo channel=1 enabled=0 ready=0 min_us=0 max_us=0 start_us=0 rate_us_s=0 dir=0 pulse_us=0'),
     @('counts','counts seen=1 M1=0 M2=0 M3=0 M4=0 age_ms=1'),
-    @('config','config issues=0xFF speed_unit=0 cal_enabled=0 cal_max_pwm=100 cal_max_ms=200'),
+    @('config','config issues=0xBF speed_unit=1 cal_enabled=0 cal_max_pwm=100 cal_max_ms=200'),
     @('output','output mode=pwm M1=0 M2=0 M3=0 M4=0'),
     @('battery','battery seen=0 millivolts=0 age_ms=1'),
     @('driver read','OK query_queued; inspect_feedback_not_ACK'),
     @('driver voltage','OK query_queued; inspect_feedback_not_ACK'),
+    @('driver info','driver_info fields=0x00 age_ms=1 version=none mtype=0 deadzone=0 mline=0 mphase=0 diameter_mm=0.000'),
+    @('driver safety','driver_safety spd_unit=mm_s command_loss=hold_last timeout_config=unsupported software_stop_verified=0 diameter_match=0'),
     @('stop','OK stopped; fresh_START_required'),
     @('cal cancel','OK stopped; fresh_START_required'),
     @('cal arm','OK cal_ready window_ms=5000'),

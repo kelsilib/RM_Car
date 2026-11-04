@@ -1,6 +1,6 @@
 /**
  * 单轮标定不使用未确认的轮径、轮序和速度单位，直接选择驱动M1～M4。
- * 仍要求手柄和编码器反馈正常、摇杆回中、START/SELECT松开、独立停车保护已确认。
+ * 要求手柄和编码器反馈正常、摇杆回中、START/SELECT松开，SELECT/stop入口已检查。
  * cal arm只给5秒准备时间；cal pulse用掉这次机会，到时归零，下一次必须重新准备。
  */
 #include "calibration.h"
