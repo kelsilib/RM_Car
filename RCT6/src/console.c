@@ -67,7 +67,7 @@ static void execute(rm_app_t *a, char *line, uint32_t now, char *out, size_t cap
     }
     if (!count) { reply(out, cap, "ERR empty_command\r\n"); return; }
     if (count == 1 && !strcmp(words[0], "help")) {
-        reply(out, cap, "help version status ps2 counts config output battery stop cal arm cal pulse M PWM MS cal cancel driver read driver reply driver voltage\r\n");
+        reply(out, cap, "help version status ps2 counts config output battery stop cal arm cal pulse M PWM MS cal cancel driver read driver reply driver info driver safety driver voltage arm servo N\r\n");
     } else if (count == 1 && !strcmp(words[0], "version")) {
         reply(out, cap, "version=" RM_FIRMWARE_ID "\r\n");
     } else if (count == 1 && !strcmp(words[0], "status")) {
@@ -76,10 +76,28 @@ static void execute(rm_app_t *a, char *line, uint32_t now, char *out, size_t cap
             (unsigned long)(now-a->motor_at_ms), (unsigned long)a->parser.malformed,
             (unsigned long)a->parser.unknown, (unsigned)a->calibration.state);
     } else if (count == 1 && !strcmp(words[0], "ps2")) {
-        reply(out, cap, "ps2 valid=%u fwd=%ld left=%ld yaw=%ld start=%u select=%u age_ms=%lu\r\n",
+        reply(out, cap, "ps2 valid=%u fwd=%ld left=%ld yaw=%ld start=%u select=%u age_ms=%lu right_y=%ld buttons=0x%04X\r\n",
             (unsigned)a->remote.valid, per_mille(a->remote.forward), per_mille(a->remote.left),
             per_mille(a->remote.yaw), (unsigned)a->remote.arm, (unsigned)a->remote.stop,
-            (unsigned long)(now-a->remote.at_ms));
+            (unsigned long)(now-a->remote.at_ms), per_mille(a->remote.right_y), (unsigned)a->remote.buttons);
+    } else if (count == 1 && !strcmp(words[0], "arm")) {
+        reply(out, cap, "arm mode=%u armed=%u channel=%u outputs=0x%02X pulse_us=%u issues=0x%02lX inhibit=0x%03lX hw=%u io_fault=%u\r\n",
+            (unsigned)a->arm.mode, (unsigned)a->arm.armed, (unsigned)a->arm.selected+1u,
+            (unsigned)a->arm.applied_mask,
+            a->arm.selected < RM_SERVOS ? (unsigned)a->arm.applied_us[a->arm.selected] : 0u,
+            (unsigned long)rm_arm_config_issues(&a->arm.config), (unsigned long)a->arm.inhibit,
+            (unsigned)a->servo_hardware_ready, (unsigned)a->arm.io_fault);
+    } else if (count == 2 && !strcmp(words[0], "servo")) {
+        int channel;
+        if (!number(words[1],&channel) || channel<1 || channel>RM_SERVOS) {
+            reply(out,cap,"ERR usage: servo channel_1_to_7\r\n"); return;
+        }
+        unsigned i = (unsigned)(channel-1);
+        const rm_servo_config_t *s = &a->arm.config.servo[i];
+        reply(out,cap,"servo channel=%u enabled=%u ready=%u min_us=%u max_us=%u start_us=%u rate_us_s=%u dir=%d pulse_us=%u\r\n",
+            i+1u,(unsigned)s->enabled,(unsigned)rm_arm_channel_ready(&a->arm.config,i),
+            (unsigned)s->min_us,(unsigned)s->max_us,(unsigned)s->start_us,
+            (unsigned)s->max_rate_us_s,(int)s->direction,(unsigned)a->arm.applied_us[i]);
     } else if (count == 1 && !strcmp(words[0], "counts")) {
         reply(out, cap, "counts seen=%u M1=%ld M2=%ld M3=%ld M4=%ld age_ms=%lu\r\n",
             (unsigned)a->motor_seen, (long)a->motor_counts[0], (long)a->motor_counts[1],
@@ -114,6 +132,23 @@ static void execute(rm_app_t *a, char *line, uint32_t now, char *out, size_t cap
         }
         bool ok = rm_app_cal_pulse(a, now, (unsigned)(channel-1), pwm, (unsigned)duration);
         reply(out, cap, ok ? "OK one_pulse_queued\r\n" : "ERR pulse_denied; check_limits_and_cal_arm\r\n");
+    } else if (count == 2 && !strcmp(words[0], "driver") && !strcmp(words[1], "safety")) {
+        /* 2026-11-02用户补充的协议事实；只显示，不发送不存在的超时配置命令。
+         * software_stop_verified记录SELECT/电脑stop的实测，diameter_match记录轮径比较。 */
+        reply(out, cap, "driver_safety spd_unit=mm_s command_loss=hold_last timeout_config=unsupported software_stop_verified=%u diameter_match=%u\r\n",
+            (unsigned)a->config.software_stop_verified,
+            (unsigned)rm_driver_diameter_matches(&a->driver_info, &a->config));
+    } else if (count == 2 && !strcmp(words[0], "driver") && !strcmp(words[1], "info")) {
+        const rm_driver_info_t *d = &a->driver_info;
+        /* nano printf不启用浮点格式；这里拆成整数和三位小数，80mm显示为80.000。 */
+        uint32_t diameter = isfinite(d->wheel_diameter_mm) && d->wheel_diameter_mm >= 0.0f &&
+            d->wheel_diameter_mm <= 1000000.0f ? (uint32_t)lroundf(d->wheel_diameter_mm*1000.0f) : 0;
+        reply(out, cap, "driver_info fields=0x%02lX age_ms=%lu version=%.16s mtype=%lu deadzone=%lu mline=%lu mphase=%lu diameter_mm=%lu.%03lu\r\n",
+            (unsigned long)d->fields, (unsigned long)(now-d->at_ms),
+            (d->fields & RM_DRIVER_VERSION) ? d->version : "none",
+            (unsigned long)d->motor_type, (unsigned long)d->dead_zone,
+            (unsigned long)d->pulse_line, (unsigned long)d->pulse_phase,
+            (unsigned long)(diameter/1000u), (unsigned long)(diameter%1000u));
     } else if (count == 2 && !strcmp(words[0], "driver") && !strcmp(words[1], "reply")) {
         reply(out, cap, "driver_reply seen=%u age_ms=%lu frame=%s\r\n", (unsigned)a->driver_reply_seen,
             (unsigned long)(now-a->driver_reply_at_ms), a->driver_reply_seen ? a->driver_reply : "none");
@@ -124,6 +159,8 @@ static void execute(rm_app_t *a, char *line, uint32_t now, char *out, size_t cap
             return;
         }
         *action = !strcmp(words[1], "read") ? RM_CONSOLE_READ_DRIVER : RM_CONSOLE_READ_VOLTAGE;
+        /* 新查询先清掉旧参数，防止没有收到这次回复时仍显示上次的完整字段。 */
+        if (*action == RM_CONSOLE_READ_DRIVER) rm_driver_info_init(&a->driver_info);
         reply(out, cap, "OK query_queued; inspect_feedback_not_ACK\r\n");
     } else {
         reply(out, cap, "ERR unknown_command; send_help\r\n");

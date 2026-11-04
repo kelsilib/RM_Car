@@ -1,6 +1,6 @@
 /* CPU出现异常，或毫秒时钟到点时，会进入这些函数。
  * SysTick只把毫秒数加1，控制代码留在main里；USART1/2接收中断写在board_hal.c。
- * HardFault等严重异常会进入board_panic尝试停车，但仍需要独立的动力保护。 */
+ * HardFault等严重异常进入board_panic尽力发PWM0，异常排查先隔离电机动力。 */
 #include "board_hal.h"
 #include "stm32f1xx_hal.h"
 void SysTick_Handler(void) { HAL_IncTick(); }

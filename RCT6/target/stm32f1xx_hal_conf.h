@@ -18,6 +18,7 @@ extern "C" {
 #define HAL_PWR_MODULE_ENABLED
 #define HAL_RCC_MODULE_ENABLED
 #define HAL_UART_MODULE_ENABLED
+#define HAL_TIM_MODULE_ENABLED
 
 /* ================= 振荡器参数 ================= */
 #if !defined(HSE_VALUE)

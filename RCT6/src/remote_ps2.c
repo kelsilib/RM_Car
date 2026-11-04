@@ -15,7 +15,7 @@
 enum {
     PS2_MODE_BYTE = 1, PS2_MARKER_BYTE = 2,
     PS2_BUTTONS_LOW_BYTE = 3, PS2_BUTTONS_HIGH_BYTE = 4,
-    PS2_RIGHT_X_BYTE = 5, PS2_LEFT_X_BYTE = 7, PS2_LEFT_Y_BYTE = 8,
+    PS2_RIGHT_X_BYTE = 5, PS2_RIGHT_Y_BYTE = 6, PS2_LEFT_X_BYTE = 7, PS2_LEFT_Y_BYTE = 8,
     PS2_ANALOG_MODE = 0x73, PS2_REPLY_MARKER = 0x5a,
     PS2_SELECT_MASK = 1u << 0, PS2_START_MASK = 1u << 3,
     PS2_HALF_CLOCK_US = 16, /* STM32附件ax_ps2.c：低16us读DAT，再高16us。 */
@@ -42,13 +42,15 @@ bool rm_ps2_decode(const uint8_t *frame, size_t n, uint32_t now, rm_remote_t *ou
     if (!frame || n != RM_PS2_ANALOG_FRAME_BYTES || frame[PS2_MODE_BYTE] != PS2_ANALOG_MODE ||
         frame[PS2_MARKER_BYTE] != PS2_REPLY_MARKER) return false;
     /* frame[3]/[4]各存一组按键，注意：按下是0，松开反而是1。
-     * frame[5]=右X，[6]=右Y（暂不用），[7]=左X，[8]=左Y。
+     * frame[5]=右X，[6]=右Y（机械臂逐路调整），[7]=左X，[8]=左Y。
      * 想交换摇杆功能，在下面三行改；轴值正负须与车体系一致。 */
     uint16_t buttons = (uint16_t)((uint16_t)frame[PS2_BUTTONS_LOW_BYTE] |
                                  ((uint16_t)frame[PS2_BUTTONS_HIGH_BYTE] << 8));
     out->forward = -axis(frame[PS2_LEFT_Y_BYTE]); /* 左摇杆上/下 -> 前进(+)/后退(-) */
     out->left = -axis(frame[PS2_LEFT_X_BYTE]);    /* 左摇杆左/右 -> 左横移(+)/右横移(-) */
     out->yaw = -axis(frame[PS2_RIGHT_X_BYTE]);    /* 右摇杆左/右 -> 逆时针(+)/顺时针(-) */
+    out->right_y = -axis(frame[PS2_RIGHT_Y_BYTE]); /* 右摇杆上/下 -> 所选舵机的正向/反向 */
+    out->buttons = (uint16_t)~buttons;
     out->arm = (buttons & PS2_START_MASK) == 0;  /* START：申请解锁，由safety.c批准 */
     out->stop = (buttons & PS2_SELECT_MASK) == 0; /* SELECT：软件禁动，不是硬件断动力 */
     /* valid只表示这包格式正确；接收器若重发旧值，关手柄后它也可能一直是true。 */

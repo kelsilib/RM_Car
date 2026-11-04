@@ -10,7 +10,7 @@ MCU = -mcpu=cortex-m3 -mthumb
 HAL = ../Drivers/STM32F1xx_HAL_Driver
 CMSIS = ../Drivers/CMSIS
 CORE_SOURCES = $(wildcard src/*.c)
-HAL_NAMES = hal hal_cortex hal_rcc hal_rcc_ex hal_gpio hal_uart hal_dma hal_pwr
+HAL_NAMES = hal hal_cortex hal_rcc hal_rcc_ex hal_gpio hal_uart hal_dma hal_pwr hal_tim hal_tim_ex
 C_SOURCES = $(CORE_SOURCES) $(wildcard target/*.c) \
             $(addprefix $(HAL)/Src/stm32f1xx_,$(addsuffix .c,$(HAL_NAMES))) \
             $(CMSIS)/Device/ST/STM32F1xx/Source/Templates/system_stm32f1xx.c
@@ -54,7 +54,7 @@ $(BUILD_DIR)/test_core.exe: $(CORE_SOURCES) tests/test_core.c $(wildcard include
 	"$(HOST_CC)" $(HOST_CFLAGS) $(CORE_SOURCES) tests/test_core.c -lm -o $@
 
 # 把真正的主循环编进PC测试，只换掉访问硬件的函数；这两个文件不进入STM32固件。
-$(BUILD_DIR)/test_firmware_main.o: target/main.c target/board_hal.h $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+$(BUILD_DIR)/test_firmware_main.o: target/main.c $(wildcard target/*.h) $(wildcard include/*.h) Makefile | $(BUILD_DIR)
 	"$(HOST_CC)" $(HOST_CFLAGS) -Dmain=rm_firmware_main -c target/main.c -o $@
 
 $(BUILD_DIR)/test_startup.exe: $(CORE_SOURCES) tests/test_startup.c $(BUILD_DIR)/test_firmware_main.o $(wildcard include/*.h) target/board_hal.h Makefile | $(BUILD_DIR)
@@ -66,11 +66,19 @@ $(BUILD_DIR)/test_service.exe: $(CORE_SOURCES) tests/test_service.c $(wildcard i
 $(BUILD_DIR)/test_ps2.exe: src/remote_ps2.c tests/test_ps2.c include/remote_ps2.h Makefile | $(BUILD_DIR)
 	"$(HOST_CC)" $(HOST_CFLAGS) src/remote_ps2.c tests/test_ps2.c -lm -o $@
 
-test: $(BUILD_DIR)/test_core.exe $(BUILD_DIR)/test_startup.exe $(BUILD_DIR)/test_service.exe $(BUILD_DIR)/test_ps2.exe
+$(BUILD_DIR)/test_arm.exe: $(CORE_SOURCES) tests/test_arm.c $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) $(CORE_SOURCES) tests/test_arm.c -lm -o $@
+
+$(BUILD_DIR)/test_arm_main.exe: $(CORE_SOURCES) tests/test_arm_main.c $(BUILD_DIR)/test_firmware_main.o $(wildcard include/*.h) target/board_servo.h Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) $(CORE_SOURCES) tests/test_arm_main.c $(BUILD_DIR)/test_firmware_main.o -lm -o $@
+
+test: $(BUILD_DIR)/test_core.exe $(BUILD_DIR)/test_startup.exe $(BUILD_DIR)/test_service.exe $(BUILD_DIR)/test_ps2.exe $(BUILD_DIR)/test_arm.exe $(BUILD_DIR)/test_arm_main.exe
 	./$(BUILD_DIR)/test_core.exe
 	./$(BUILD_DIR)/test_startup.exe
 	./$(BUILD_DIR)/test_service.exe
 	./$(BUILD_DIR)/test_ps2.exe
+	./$(BUILD_DIR)/test_arm.exe
+	./$(BUILD_DIR)/test_arm_main.exe
 
 # 只检查PS2接线代码能否编译；不会改变正式固件中“默认关闭PS2”的设置。
 check-ps2: | $(BUILD_DIR)

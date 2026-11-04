@@ -39,10 +39,10 @@
 
 - 本工程下载文件：`build/rm_rct6.hex`，HEX自带地址。
 - 若使用支持BIN的其他工具，`build/rm_rct6.bin`的基地址是`0x08000000`；FlyMCU步骤优先用HEX。
-- 不选仓库上级旧C8/TB6612产物、PC测试EXE，也不选专门测试用的PS2启用构建。
-- 首次保持默认运动禁用、标定关闭、`RM_PS2_WIRED=0`。这一步验证主控启动和日志，不要求电机、手柄或机械臂接好。
+- 不选仓库上级旧C8/TB6612产物、PC测试EXE，也不选专门测试用的PS2/舵机接口启用构建。用户驱动资料包里的`FourWay_Motor_STM32.hex`属于四路驱动板，不能烧进RCT6主控。
+- 首次保持默认运动禁用、标定关闭、`RM_PS2_WIRED=0`、`RM_ARM_WIRED=0`及机械臂各路关闭。这一步验证主控启动和日志，不要求电机、手柄或机械臂接好。
 
-当前本地构建编号为`rm_rct6-chassis-60mm-r2`，采用用户确认的60mm轮径及CAD轮心距，**尚未下载到主板**。默认BIN的SHA256为`2635fd9707a86bc7ca1c8df2471f4312f17a0db843376ae7b0e9f58db2305d45`，HEX为`4cc264dc638c0ec90c3a404dda02f2abf794e684f79fcd61063add2c3ba0ce8c`；详见[60mm产物记录](reports/geometry-60mm-artifacts.json)和[验证说明](reports/GEOMETRY_60MM_CONFIG.md)。
+当前默认构建为`rm_rct6-bench-20261104-r9-safe`，默认BIN的SHA256为`23394b67f3e0c942f9a366b1806bc6e5177b2afa5ce465e5d40393553fa42d9a`，HEX为`535300a76a945b3fc65ba48fa928e2fa3a4e042cce46e8d20182b8b6df7c00fe`。PS2只读变体路径见[今晚联调入口](TONIGHT_BRINGUP.md)，三个构建的源码与产物记录见[本次清单](reports/lift-shortcut-artifacts-20261104.json)。r9增加K210升降台独立选择键，机构参数和实测状态见[控制说明](ARM_CONTROL.md)。
 
 主板最后确认运行的旧版为`rm_rct6-chassis-20261023-r1`，其历史默认BIN的SHA256是`42888eeca4acc9b31a748ad0ce2e5e645b669cc4ac881396a298816c518dea79`，见[PS2构建记录](reports/ps2-refactor-20261023-artifacts.json)。新构建不能继续套用旧哈希；重编译后也应重新核对所选文件。
 
@@ -92,7 +92,7 @@
 | 校验失败 | 目标型号/容量、所选HEX、线缆/供电及完整日志；不能当成下载完成 |
 | 校验通过但没有应用日志 | 程序是否从Flash启动、下载工具是否释放COM、终端8N1设置、BOOT0/复位状态 |
 
-现有`board.ps1 -Mode ReadTarget`使用ST-Link/OpenOCD，不适用这条USB串口ISP路径。它的`Check`包含ST-Link工具检查，不能将“缺ST-Link”当成A转C下载不可用。
+现有`board.ps1 -Mode ReadTarget`使用ST-Link/OpenOCD。2026-11-04已将`Check`默认改为UART环境枚举及默认BIN哈希核对，显式`-Interface SWD`才检查SWD工具与探针，原入口继续保留。
 
 本机已找到随CubeIDE安装的`STM32_Programmer_CLI.exe`，帮助提供UART连接、DTR/RTS、下载和校验选项。助手可在实物接好后代查COM号并准备命令行下载；实际BOOT进入方式需先验证，不把“工具存在”当成已烧录成功。插拔线、确认接线及必要按键由用户操作。
 
@@ -101,4 +101,4 @@
 - 仓库资料：`../references/双TypeCF103RCT6原理图.pdf`，确认USB、CH340、PA9/PA10及BOOT/RESET连接。
 - 上述本机资料包：`0.使用前注意事项/0.使用前注意事项.txt`、`串口下载使用必看.txt`，确认双口用途、BOOT下拉、CH340K及驱动要求。
 - 同一资料包：`FLYMCU串口下载配置.png`、`7.STM32的ISP下载程序说明/STM32的ISP下载程序说明.pdf`，确认界面步骤和自动下载配置；截图的COM号/其他型号日志不是本板实测。
-- 2026-10-23准备阶段核对了本地文档和当时固件哈希，未修改固件默认值、安装驱动或烧录；后续2026-10-25下载结果另见顶部链接的实测记录。本次60mm配置只做本地修改、测试和构建，未暂存、提交、推送或再次烧录。后续设备操作需另记实际COM、器件信息、固件哈希、接线供电和校验/运行结果。
+- 2026-10-23准备阶段核对了本地文档和当时固件哈希，未修改固件默认值、安装驱动或烧录；后续2026-10-25下载结果另见顶部链接的实测记录。2026-10-26的80mm更正、r4驱动资料修正以及2026-11-01的r5机械臂开发只做本地修改、测试和构建，未暂存、提交、推送或再次烧录。后续设备操作需另记实际COM、器件信息、固件哈希、接线供电和校验/运行结果。

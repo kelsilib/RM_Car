@@ -78,8 +78,10 @@ static bool parse(rm_motor_parser_t *p, rm_motor_packet_t *out, uint32_t now)
     /* 四轮字段必须刚好四个：不能少、不能多，最后不能再有其他字符。 */
     for (unsigned i = 0; i < RM_WHEELS; ++i) {
         if (pkt.kind == RM_PACKET_SPEED) {
-            if (!decimal(&s, &pkt.speeds[i]) || fabsf(pkt.speeds[i]) > 1000.0f)
-                goto bad;
+            /* ±1000是spd指令的范围，不是MSPD反馈的范围。
+             * 官方示例把反馈读成float、单位mm/s；不因手转或超调超过1000就报坏包。
+             * decimal仍拒绝NaN/Inf、指数、溢出和过大的数字，反馈也不刷新健康时间。 */
+            if (!decimal(&s, &pkt.speeds[i])) goto bad;
         } else if (!integer(&s, &pkt.counts[i])) goto bad;
         if (i != RM_WHEELS - 1) {
             if (*s != ',') goto bad;
@@ -129,6 +131,102 @@ bool rm_motor_feed(rm_motor_parser_t *p, uint8_t b, uint32_t now,
     }
     p->frame[p->length++] = (char)b;
     return false;
+}
+
+void rm_driver_info_init(rm_driver_info_t *info) { memset(info, 0, sizeof *info); }
+
+bool rm_driver_diameter_matches(const rm_driver_info_t *info, const rm_config_t *config)
+{
+    if (!info || !config || !(info->fields & RM_DRIVER_DIAMETER)) return false;
+    float expected_mm = config->radius_m * 2000.0f;
+    float received_mm = info->wheel_diameter_mm;
+    /* 把两边都化成0.001mm的整数，避免80mm在浮点计算中的尾差造成误判。
+     * 上限同时保证lroundf在32位long中不会溢出；这不是允许使用的实物轮径范围。 */
+    if (!isfinite(expected_mm) || expected_mm <= 0.0f || expected_mm > 1000000.0f ||
+        !isfinite(received_mm) || received_mm <= 0.0f || received_mm > 1000000.0f) return false;
+    return lroundf(expected_mm * 1000.0f) == lroundf(received_mm * 1000.0f);
+}
+
+/* 普通配置文本和运动反馈分开处理。保留字段原名，不猜没有依据的返回格式。 */
+static void driver_info_line(rm_driver_info_t *info, uint32_t now)
+{
+    char *s = info->line;
+    while (*s == ' ') ++s;
+    char *end = s + strlen(s);
+    while (end > s && end[-1] == ' ') *--end = '\0';
+    const struct { const char *prefix; uint32_t bit, limit; uint32_t *value; } numbers[] = {
+        {"Motor_type:", RM_DRIVER_TYPE, 4u, &info->motor_type},
+        {"Dead_Zone:", RM_DRIVER_DEADZONE, 3600u, &info->dead_zone},
+        {"Pulse_Line:", RM_DRIVER_LINE, 65535u, &info->pulse_line},
+        {"Pulse_Phase:", RM_DRIVER_PHASE, 65535u, &info->pulse_phase}
+    };
+    for (size_t i = 0; i < sizeof numbers / sizeof numbers[0]; ++i) {
+        size_t n = strlen(numbers[i].prefix);
+        if (strncmp(s, numbers[i].prefix, n)) continue;
+        const char *value = s+n;
+        int32_t parsed;
+        info->fields &= ~numbers[i].bit;
+        *numbers[i].value = 0;
+        /* 0也原样记录：它可能是未配置或无编码器状态，不能因此算作验收通过。 */
+        if (integer(&value, &parsed) && !*value && parsed >= 0 &&
+            (uint32_t)parsed <= numbers[i].limit) {
+            *numbers[i].value = (uint32_t)parsed;
+            info->fields |= numbers[i].bit;
+            info->at_ms = now;
+        }
+        return;
+    }
+    if (!strncmp(s, "wheel_diameter:", 15)) {
+        const char *value = s+15;
+        float parsed;
+        info->fields &= ~(uint32_t)RM_DRIVER_DIAMETER;
+        info->wheel_diameter_mm = 0.0f;
+        if (decimal(&value, &parsed) && !*value && parsed >= 0.0f && parsed <= 1000000.0f) {
+            info->wheel_diameter_mm = parsed;
+            info->fields |= RM_DRIVER_DIAMETER;
+            info->at_ms = now;
+        }
+    } else if (!strncmp(s, "Motor_Version:", 14)) {
+        const char *value = s+14;
+        size_t n = strlen(value);
+        info->fields &= ~(uint32_t)RM_DRIVER_VERSION;
+        info->version[0] = '\0';
+        if (!n || n >= sizeof info->version) return;
+        for (size_t i = 0; i < n; ++i) {
+            char c = value[i];
+            if (!((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') ||
+                  (c >= 'a' && c <= 'z') || c == '.' || c == '_' || c == '-')) return;
+        }
+        memcpy(info->version, value, n+1);
+        info->fields |= RM_DRIVER_VERSION;
+        info->at_ms = now;
+    }
+}
+
+void rm_driver_info_feed(rm_driver_info_t *info, uint8_t byte, uint32_t now, bool framed)
+{
+    if (!info) return;
+    if ((uint32_t)(now-info->last_byte_ms) > 50u || framed) {
+        info->length = 0;
+        info->dropping = false;
+    }
+    info->last_byte_ms = now;
+    if (framed) return;
+    if (byte == '\r' || byte == '\n') {
+        if (!info->dropping && info->length) {
+            info->line[info->length] = '\0';
+            driver_info_line(info, now);
+        }
+        info->length = 0;
+        info->dropping = false;
+        return;
+    }
+    if (info->dropping) return;
+    if (byte < 0x20 || byte > 0x7e || info->length >= sizeof info->line-1) {
+        info->dropping = true;
+        return;
+    }
+    info->line[info->length++] = (char)byte;
 }
 
 bool rm_motor_command(char *out, size_t cap, bool speed_mode,

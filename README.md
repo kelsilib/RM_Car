@@ -1,8 +1,10 @@
 # RM_Car：STM32F103RCT6 麦克纳姆底盘
 
-STM32F103RCT6 + 亚博四路智能串口驱动 + PS2 手柄 + 四轮麦克纳姆。当前本地固件：`rm_rct6-chassis-60mm-r2`，已构建、尚未烧录。最后确认在主板上运行的仍是`rm_rct6-chassis-20261023-r1`。
+STM32F103RCT6 + 亚博四路智能串口驱动 + PS2手柄 + 四轮麦克纳姆 + 七路MG995手动控制。当前本地默认固件`rm_rct6-bench-20261104-r9-safe`，另备PS2只读版`rm_rct6-bench-20261104-r9-ps2`。r9新增△直达承载K210的S1升降台，S2～S7六路供机械臂使用，按键与验证见[机构控制说明](RCT6/ARM_CONTROL.md)。底盘、单轮标定与机械臂默认关闭，当前实物记录为旧r1的单板启动及查询。
 
-**开发、编译和测试从 [RCT6/README.md](RCT6/README.md) 开始。** 当前采用用户确认的60mm轮径、凹口车头和CAD轮心距初值，见[尺寸与方向说明](RCT6/GEOMETRY_REFERENCE.md)。新r2已完成电脑测试和真实ARM构建；2026-10-25旧r1通过CH340/FlyMCU烧录后，已捕获主板启动信息和59行连续禁动状态日志，并取得version/config双向查询回复。PS2、电机及整车验收仍待完成，见[单板实测记录](RCT6/reports/USB_ISP_2026-10-25.md)。默认行驶与标定均禁用，待核实项见[CONFIG_PENDING.md](RCT6/CONFIG_PENDING.md)。
+2026-11-04已将原工程302个文件迁入当前目录，以最新origin/main建立test/mecanum-bringup-20261104，保留80mm、机械臂及驱动后续工作。今晚从[麦轮联调入口](RCT6/TONIGHT_BRINGUP.md)开始，当前记录见[软件急停验证](RCT6/reports/SOFTWARE_STOP_2026-11-04.md)。用户确认3S满电12.6V输入可用，并明确使用SELECT/电脑stop作为今晚人工看护、四轮架空测试的急停。r8按该范围记录software_stop_verified，默认仍待实测。
+
+**开发、编译和测试从 [RCT6/README.md](RCT6/README.md) 开始。** SPD采用轮缘mm/s，轮径回读门禁及七路MG995功能继续保留。驱动断命令保持最后SPD/PWM，SELECT/电脑stop依赖主控与TX正常。80mm、CAD轮心距和凹口车头见[几何说明](RCT6/GEOMETRY_REFERENCE.md)，旧r1单板记录与其他缺项见[CONFIG_PENDING.md](RCT6/CONFIG_PENDING.md)。
 
 ## 阅读入口
 
@@ -12,12 +14,19 @@ STM32F103RCT6 + 亚博四路智能串口驱动 + PS2 手柄 + 四轮麦克纳姆
 | [软件范围](RCT6/SOFTWARE_SCOPE.md) | 当前已完成的软件和实物待办 |
 | [电脑串口指令](RCT6/CONSOLE.md) | 查询、停车、受限单轮标定与reply回复 |
 | [硬件说明](RCT6/HARDWARE.md) | 引脚、供电和接线资料 |
+| [最新整车排线](RCT6/WIRING_PLAN.md) | 1台K210、7台MG995、四路驱动与电源板；舵机软件已实现且默认关闭，K210仍预留 |
+| [机械臂与PS2按键](RCT6/ARM_CONTROL.md) | S1 K210升降台、△直达键、S2～S7编号控制、逐路许可与待标定参数 |
 | [协议说明](RCT6/PROTOCOL.md) | 电机UART、PS2与故障处理 |
+| [驱动资料依据](RCT6/DRIVER_REFERENCE.md) | 厂商资料包、表格笔误、配置回读及控制/反馈单位区别 |
 | [PS2资料依据与对应关系](RCT6/PS2_REFERENCE.md) | 官方附件、接线/按键、时序、资料冲突和待实测项 |
 | [上板步骤](RCT6/BRINGUP.md) | 有主板后的下载和联调 |
 | [A 转 C 下载说明](RCT6/USB_ISP.md) | CH340 端口识别、FlyMCU 串口 ISP、写后校验与日志 |
-| [尺寸与方向说明](RCT6/GEOMETRY_REFERENCE.md) | 60mm轮径、CAD轮心距、凹口车头及四轮名称 |
-| [当前配置验证记录](RCT6/reports/GEOMETRY_60MM_CONFIG.md) | 60mm配置、PC回归、默认ARM构建与固件哈希；未烧录 |
+| [尺寸与方向说明](RCT6/GEOMETRY_REFERENCE.md) | 80mm轮径、CAD轮心距、凹口车头及四轮名称 |
+| [本次联调准备](RCT6/reports/SOFTWARE_STOP_2026-11-04.md) | r8分支整理、软件急停回归、两个构建与今晚架空流程 |
+| [驱动收尾记录](RCT6/reports/DRIVER_FINALIZATION_2026-11-02.md) | r6单位、轮径门禁、独立停车要求及历史构建与哈希 |
+| [机械臂开发记录](RCT6/reports/ARM_CONTROL_2026-11-01.md) | r5新增七路MG995的软件与历史证据，功能继续保留 |
+| [驱动资料修正记录](RCT6/reports/DRIVER_ALIGNMENT_2026-10-26.md) | r4驱动回读与反馈范围修正的历史证据 |
+| [80mm几何修正记录](RCT6/reports/GEOMETRY_80MM_CORRECTION.md) | 前一轮轮径更正的历史测试和构建证据 |
 | [PS2重构记录](RCT6/reports/PS2_REFACTOR_2026-10-23.md) | PS2重构、测试及默认/启用两种构建的历史证据 |
 
 ## 在电脑上运行
@@ -38,7 +47,7 @@ cd RCT6
 
 ## 源码与资料
 
-- `RCT6/src`、`include`、`target`：当前底盘的应用、安全、遥控、运动学、串口、标定和MCU适配。
+- `RCT6/src`、`include`、`target`：当前底盘及机械臂的应用、安全、遥控、运动学、串口、标定、PWM和MCU适配。
 - `RCT6/tests`、`tools`、`openocd`：电脑测试和后续联调工具。
 - `RCT6/reports`：测试与构建证据；以最新修复验证记录为准。
 - `Drivers`：构建必需的ST HAL/CMSIS依赖，保留原有版权声明。
@@ -47,15 +56,17 @@ cd RCT6
 - [README_MIGRATION.md](README_MIGRATION.md)：上传前根README的完整内容和迁移记录。
 - [RM_CODEX_HANDOFF.md](RM_CODEX_HANDOFF.md)：原始交接文档；较早范围以当前软件范围为准。
 
-此前交付的仓库和源码ZIP包含当时的项目README、说明文档、源码、必要驱动、已有参考资料和验证报告；后续本地改动不会自动进入旧ZIP或GitHub。编译产物、缓存和临时文件由`.gitignore`排除，需在本机重新生成。K210回传后三色灯带亮灯、机械臂控制已另列待办，资料缺项见[软件范围](RCT6/SOFTWARE_SCOPE.md)，当前固件尚未实现这两项。
+此前交付的仓库和源码ZIP包含当时的项目README、说明文档、源码、必要驱动、已有参考资料和验证报告；后续本地改动不会自动进入旧ZIP或GitHub。编译产物、缓存和临时文件由`.gitignore`排除，需在本机重新生成。K210回传后三色灯带亮灯仍待开发；七路机械臂编号手动控制已实现，供电、限位、初始姿态及完整机构动作仍待确认，见[软件范围](RCT6/SOFTWARE_SCOPE.md)。
 
 2026-10-23设备状态更新：主板已到手，尚未接电脑。主下载路径改为USB-A转Type-C，经板载CH340执行串口ISP；详见[A转C下载说明](RCT6/USB_ISP.md)。本次只整理文档，未连接、烧录或进行实物测试。下方历史Git检查记录按当时状态保留。
 
 ## 当前验证
 
-当前60mm配置：核心C逻辑129233条断言、标定/终端510条断言、29个模拟主循环场景和PS2专项3745项检查通过；默认ARM构建及ELF/HEX/BIN检查通过。新r2没有烧录，实际轮心距、轮序/转向、速度单位及失联停车仍待验证，见[本次报告](RCT6/reports/GEOMETRY_60MM_CONFIG.md)。
+2026-11-04最新r8通过全部PC回归，服务测试745条断言含行驶/标定各自的SELECT与电脑stop检查。另有7项联调工具回归、两个ARM构建与15次路径分析通过，见[本次报告](RCT6/reports/SOFTWARE_STOP_2026-11-04.md)。以下r6及旧表保留为历史。
 
-2026-10-23历史：核心C逻辑129218条断言、标定/终端510条断言、29个模拟主循环场景、PS2专项3745项检查、17项日志工具检查和33项电脑回复检查通过；默认及PS2启用两种ARM构建和产物检查通过，ARM GCC静态分析无诊断。日志工具、电脑回复、PS2启用构建和静态分析本次未重跑，不将旧结果作为新r2的执行记录。
+r6保留80mm配置：核心129334条断言、服务555条断言、32个底盘主循环场景、PS2专项6580项、机械臂42651条断言和11个主循环场景、日志17项、电脑回复43项通过。默认及PS2/舵机接口启用两种ARM构建、产物检查和七个C模块静态分析通过，见[该轮报告](RCT6/reports/DRIVER_FINALIZATION_2026-11-02.md)。SPD单位已知；轮序/方向、电机参数、PS2、舵机参数和独立停车硬件仍待实测，r6未烧录。
+
+2026-10-23历史：核心C逻辑129218条断言、标定/终端510条断言、29个模拟主循环场景、PS2专项3745项检查、17项日志工具检查和33项电脑回复检查通过；默认及PS2启用两种ARM构建和产物检查通过，ARM GCC静态分析无诊断。10月26日r4只重建默认变体；后续r5/r6的构建以上方当前验证及对应报告为准，旧结果保留为历史。
 
 第三方来源及现有授权标记见[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
@@ -63,7 +74,7 @@ cd RCT6
 
 仓库协作规则见 [AGENTS.md](AGENTS.md)，PR 使用[审核模板](.github/PULL_REQUEST_TEMPLATE.md)。本节补充现有说明；旧 README、源码、HAL/CMSIS 和构建文件均保留。
 
-本节下方的Git检查表和“本轮未重跑”等表述，记录的是PS2重构之前的那次本地协作配置检查。后续结果见上方“当前验证”、[60mm配置报告](RCT6/reports/GEOMETRY_60MM_CONFIG.md)及[PS2重构报告](RCT6/reports/PS2_REFACTOR_2026-10-23.md)，原检查记录保留。
+本节下方的Git检查表和“本轮未重跑”等表述，记录的是PS2重构之前的那次本地协作配置检查。后续结果见上方“当前验证”、[r6驱动收尾报告](RCT6/reports/DRIVER_FINALIZATION_2026-11-02.md)、[机械臂交付报告](RCT6/reports/ARM_CONTROL_2026-11-01.md)、[驱动资料修正报告](RCT6/reports/DRIVER_ALIGNMENT_2026-10-26.md)、[80mm配置报告](RCT6/reports/GEOMETRY_80MM_CORRECTION.md)及[PS2重构报告](RCT6/reports/PS2_REFACTOR_2026-10-23.md)，原检查记录保留。
 
 ### 目录与 CubeIDE/CubeMX 的关系
 

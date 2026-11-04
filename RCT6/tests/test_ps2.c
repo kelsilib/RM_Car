@@ -105,7 +105,7 @@ static rm_ps2_bus_t make_bus(wire_t *w)
 static bool cleared(const rm_remote_t *r, uint32_t now)
 {
     return !r->valid && !r->arm && !r->stop && r->forward == 0 &&
-           r->left == 0 && r->yaw == 0 && r->at_ms == now;
+           r->left == 0 && r->yaw == 0 && r->right_y == 0 && r->buttons == 0 && r->at_ms == now;
 }
 
 static bool test_timing(void)
@@ -188,17 +188,17 @@ static bool test_decode(void)
     }
     CHECK(!r.arm && !r.stop && NEAR(r.forward,0) && NEAR(r.left,0) && NEAR(r.yaw,0));
     /* 逐轴扫过0～255，检查端点、中心、方向，另外三轴不应串到该轴上。 */
-    const unsigned positions[] = {8,7,5};
-    for (unsigned a = 0; a < 3; ++a) {
+    const unsigned positions[] = {8,7,5,6};
+    for (unsigned a = 0; a < 4; ++a) {
         float previous = 2;
         for (unsigned raw = 0; raw < 256; ++raw) {
             frame[5] = frame[7] = frame[8] = 128;
             frame[positions[a]] = (uint8_t)raw;
             CHECK(rm_ps2_decode(frame, 9, 43, &r));
-            const float axes[] = {r.forward,r.left,r.yaw};
+            const float axes[] = {r.forward,r.left,r.yaw,r.right_y};
             float value = axes[a];
             CHECK(value >= -1 && value <= 1 && value < previous);
-            CHECK(NEAR(axes[(a+1)%3],0) && NEAR(axes[(a+2)%3],0));
+            for(unsigned other=0;other<4;++other)if(other!=a)CHECK(NEAR(axes[other],0));
             if (raw == 0) CHECK(NEAR(value,1));
             if (raw == 128) CHECK(NEAR(value,0));
             if (raw == 255) CHECK(NEAR(value,-1));
@@ -209,9 +209,10 @@ static bool test_decode(void)
     for (unsigned bit = 0; bit < 16; ++bit) {
         uint16_t buttons = (uint16_t)~(1u << bit);
         frame[3] = (uint8_t)buttons; frame[4] = (uint8_t)(buttons >> 8);
-        frame[6] = (uint8_t)(bit * 17u); /* 右Y未分配，不应影响运动或按键。 */
+        frame[6] = (uint8_t)(bit * 17u); /* 右Y仅用于机械臂，不应混到另三轴或按键。 */
         CHECK(rm_ps2_decode(frame, 9, 44, &r));
         CHECK(r.arm == (bit == 3) && r.stop == (bit == 0));
+        CHECK(r.buttons == (uint16_t)(1u<<bit));
         CHECK(NEAR(r.forward,0) && NEAR(r.left,0) && NEAR(r.yaw,0));
     }
     frame[3] = 0xf6; frame[4] = 0xff;

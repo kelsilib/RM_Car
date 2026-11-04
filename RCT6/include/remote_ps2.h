@@ -6,11 +6,20 @@
 #include <stdint.h>
 
 enum { RM_PS2_ANALOG_FRAME_BYTES = 9 }; /* 只支持普通模拟模式；压力模式不能截短后使用。 */
+/* 对外统一为“按下=1”，与原始包中的低电平有效相反。L3/R3资料名称有冲突，不分配动作。 */
+enum {
+    RM_PS2_SELECT=1u, RM_PS2_START=1u<<3,
+    RM_PS2_UP=1u<<4, RM_PS2_RIGHT=1u<<5, RM_PS2_DOWN=1u<<6, RM_PS2_LEFT=1u<<7,
+    RM_PS2_L2=1u<<8, RM_PS2_R2=1u<<9, RM_PS2_L1=1u<<10, RM_PS2_R1=1u<<11,
+    RM_PS2_TRIANGLE=1u<<12, RM_PS2_CIRCLE=1u<<13, RM_PS2_CROSS=1u<<14, RM_PS2_SQUARE=1u<<15
+};
 
 typedef struct {
     float forward, left, yaw; /* -1～+1：正值分别是向前、向左、逆时针 */
     uint32_t at_ms;           /* 这次读取接收器的时间ms；不代表无线手柄刚发了新数据 */
     bool valid, arm, stop;    /* 包是否合法 / START是否按下 / SELECT是否按下 */
+    float right_y;           /* 右摇杆上/下：+1/-1，供机械臂逐路调整；底盘仍只用右X旋转。 */
+    uint16_t buttons;        /* 上述RM_PS2_*位图；读包失败时也会清零，不能沿用旧动作。 */
 } rm_remote_t;
 /* 这些函数负责操作引脚。换主控板时改这些函数，按键和摇杆的解释可以继续用。 */
 typedef struct {

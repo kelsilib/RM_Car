@@ -5,15 +5,20 @@
   "toolchain": "gnu-arm",
   "compiler": "D:\\stm32\\STM32CubeIDE_1.19.0\\STM32CubeIDE\\plugins\\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344\\tools\\bin\\arm-none-eabi-gcc.exe",
   "make": "D:\\stm32\\STM32CubeIDE_1.19.0\\STM32CubeIDE\\plugins\\com.st.stm32cube.ide.mcu.externaltools.make.win32_2.2.0.202409170845\\tools\\bin\\make.exe",
-  "source": "C:\\Users\\fakel\\Documents\\Codex\\2026-10-21\\g-g\\outputs\\RM_Car\\RCT6",
-  "build_dir": "C:\\Users\\fakel\\Documents\\Codex\\2026-10-21\\g-g\\outputs\\RM_Car\\RCT6\\build",
-  "artifact_path": "C:\\Users\\fakel\\Documents\\Codex\\2026-10-21\\g-g\\outputs\\RM_Car\\RCT6\\build\\rm_rct6.elf",
+  "source": "C:\\Users\\fakel\\Documents\\ChatGPT\\adam校内赛\\RCT6",
+  "build_dir": "C:\\Users\\fakel\\Documents\\ChatGPT\\adam校内赛\\RCT6\\build",
+  "artifact_path": "C:\\Users\\fakel\\Documents\\ChatGPT\\adam校内赛\\RCT6\\build\\rm_rct6.elf",
   "artifact_kind": "elf",
   "flash_origin": "0x08000000",
   "flash_bytes": 262144,
   "ram_bytes": 49152,
   "motion_enabled_by_default": false,
-  "firmware_id": "rm_rct6-chassis-60mm-r2",
+  "firmware_id": "rm_rct6-bench-20261104-r9-safe",
+  "driver_command_unit": "wheel_rim_mm_s",
+  "driver_command_loss": "hold_last_speed_or_pwm",
+  "driver_timeout_config_supported": false,
+  "arm_motion_enabled_by_default": false,
+  "arm_wired_by_default": false,
   "last_hardware_verified_firmware": "rm_rct6-chassis-20261023-r1",
   "reproduce": [
     ".\\build.ps1 -Test",
@@ -21,13 +26,17 @@
     ".\\build.ps1 -Test -Rebuild",
     ".\\build.ps1 -Rebuild"
   ],
-  "latest_verification_report": "reports/GEOMETRY_60MM_CONFIG.md",
-  "latest_artifact_report": "reports/geometry-60mm-artifacts.json",
+  "latest_verification_report": "ARM_CONTROL.md",
+  "latest_artifact_report": "reports/lift-shortcut-artifacts-20261104.json",
   "console_baud_rate": 115200,
   "serial_port": "COM5",
   "baud_rate": 115200,
   "serial_port_observation": "2026-10-25: COM5 CH340K; user FlyMCU log reports programming complete; capture-9084bcd2.log confirms boot and 59 inhibited-state samples; user terminal output confirms version/config replies; PS2 and motors not tested",
   "latest_hardware_report": "reports/USB_ISP_2026-10-25.md",
   "hardware_tools_config": "tools/board-tools.json",
-  "openocd_config": ["openocd/stlink-rct6.cfg"]
+  "openocd_config": [
+    "openocd/stlink-rct6.cfg"
+  ],
+  "software_stop_verified": false,
+  "stop_acceptance_scope": "user-requested supervised wheels-raised SELECT/console-stop tests, 2026-11-04"
 }

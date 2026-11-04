@@ -12,11 +12,15 @@ function Get-BoardCommandResult {
         '^version$' { '^version=[A-Za-z0-9_-]+$'; break }
         '^status$' { '^state=[0-9]+ inhibit=0x[0-9A-Fa-f]+ '; break }
         '^ps2$' { '^ps2 valid='; break }
+        '^arm$' { '^arm mode='; break }
+        '^servo 0*([1-7])$' { ('^servo channel=' + $Matches[1] + ' '); break }
         '^counts$' { '^counts seen='; break }
         '^config$' { '^config issues='; break }
         '^output$' { '^output mode='; break }
         '^battery$' { '^battery seen='; break }
         '^driver reply$' { '^driver_reply seen='; break }
+        '^driver info$' { '^driver_info fields='; break }
+        '^driver safety$' { '^driver_safety spd_unit='; break }
         '^driver (read|voltage)$' { '^OK query_queued; inspect_feedback_not_ACK$'; break }
         '^(stop|cal cancel)$' { '^OK stopped; fresh_START_required$'; break }
         '^cal arm$' { '^OK cal_ready window_ms=5000$'; break }

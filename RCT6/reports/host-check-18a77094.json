@@ -1,0 +1,42 @@
+{
+  "checked_at_utc": "2026-11-04T08:18:41.4863887Z",
+  "tools_ready": true,
+  "interface": "UART",
+  "swd_config_parsed": false,
+  "firmware_hash_matches_last_verification": true,
+  "stlink_serials": [],
+  "serial_ports": [
+    {
+      "FriendlyName": "COM4",
+      "Status": "enumerated"
+    },
+    {
+      "FriendlyName": "COM3",
+      "Status": "enumerated"
+    }
+  ],
+  "uart_inventory": [
+    "      -------------------------------------------------------------------",
+    "                       STM32CubeProgrammer v2.20.0                  ",
+    "      -------------------------------------------------------------------",
+    "",
+    "=====  UART Interface  =====",
+    "",
+    "Total number of serial ports available: 2",
+    "",
+    "Port: COM3",
+    "Location: \\\\.\\COM3",
+    "Description: ??????????",
+    "Manufacturer: Microsoft",
+    "",
+    "Port: COM4",
+    "Location: \\\\.\\COM4",
+    "Description: ??????????",
+    "Manufacturer: Microsoft",
+    ""
+  ],
+  "target_connected": false,
+  "flashed": false,
+  "hardware_tested": false,
+  "note": "Check只枚举USB和读取配置，不连接目标MCU。没有设备时也能完成工具检查。"
+}

@@ -262,7 +262,7 @@ void board_panic(void)
 {
     __disable_irq();
     /* 严重异常时尽力发一次PWM0，然后停住。中断已经关闭，不能再靠HAL毫秒计时等待。
-     * 主控死机或TX线断开时，这条命令可能送不到；独立停车保护仍然必需。
+     * 主控死机或TX线断开时，这条命令可能送不到，人工联调异常时先隔离动力。
      * 调试器停在这里时，先检查故障和初始化结果，不要强行跳过继续跑。 */
     if ((RCC->APB1ENR & RCC_APB1ENR_USART2EN) && (USART2->CR1 & USART_CR1_UE)) {
         static const char stop[] = "$pwm:0,0,0,0#";

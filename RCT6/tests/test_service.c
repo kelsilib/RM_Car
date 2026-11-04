@@ -1,6 +1,7 @@
 /* 单轮标定和电脑指令的PC测试。下面的已验收标志只存在于模拟车，不会编入固件。 */
 #include "console.h"
 #include <limits.h>
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -12,7 +13,7 @@ static rm_config_t fixture(bool geometry_ready)
 {
     rm_config_t c = rm_config_default();
     c.calibration_enabled = true;
-    c.ps2_wiring_verified = c.remote_failsafe_verified = c.driver_failsafe_verified = true;
+    c.ps2_wiring_verified = c.remote_failsafe_verified = c.software_stop_verified = true;
     if (geometry_ready) {
         c.radius_m=0.05f; c.half_length_m=c.half_width_m=0.1f;
         c.geometry_verified=c.mapping_verified=c.motor_parameters_verified=true;
@@ -36,6 +37,7 @@ static void prepare(rm_app_t *a, bool geometry_ready, uint32_t start)
 {
     rm_config_t c=fixture(geometry_ready);
     rm_app_init(a,&c,start);
+    if (geometry_ready) packet(a,"wheel_diameter:100.000\r\n",start);
     char frame[48];
     for(unsigned elapsed=0;elapsed<=320;elapsed+=20) {
         fresh(a,start+elapsed);
@@ -108,7 +110,7 @@ static bool test_calibration_guards(void)
             case 4: a.remote.arm=true; break;
             case 5: a.remote.stop=true; break;
             case 6: estop=true; break;
-            case 7: a.config.driver_failsafe_verified=false; break;
+            case 7: a.config.software_stop_verified=false; break;
             case 8: a.last_step_ms=200; break;
             case 9: a.calibration.channel=4; break;
             case 10: a.config.calibration_max_pwm=10; break;
@@ -187,7 +189,7 @@ static bool test_console_queries_and_framing(void)
     char reply[RM_CONSOLE_REPLY_CAP]; rm_console_action_t action;
     CHECK(command(&c,&a,"help\r\n",320,320,reply,&action)==1 && strstr(reply,"cal pulse"));
     CHECK(command(&c,&a,"  ps2  \n",320,320,reply,&action)==1 && strstr(reply,"fwd=0"));
-    CHECK(command(&c,&a,"config\n",320,320,reply,&action)==1 && strstr(reply,"issues=0xC7"));
+    CHECK(command(&c,&a,"config\n",320,320,reply,&action)==1 && strstr(reply,"issues=0x87"));
     packet(&a,"$Battery:12.60V#",321);
     CHECK(command(&c,&a,"counts\n",322,322,reply,&action)==1 && strstr(reply,"M2=-2"));
     CHECK(command(&c,&a,"battery\n",322,322,reply,&action)==1 && strstr(reply,"millivolts=12600"));
@@ -242,7 +244,7 @@ static bool test_reply_markers_and_capacity(void)
     rm_app_t a; prepare(&a,false,0); rm_console_t c; rm_console_init(&c);
     char reply[RM_CONSOLE_REPLY_CAP]; rm_console_action_t action;
     const char *queries[] = {"help\n", "version\n", "status\n", "ps2\n", "counts\n",
-        "config\n", "output\n", "battery\n", "driver read\n", "driver voltage\n",
+        "config\n", "output\n", "battery\n", "driver read\n", "driver voltage\n", "driver safety\n",
         "stop\n", "cal cancel\n", "cal arm\n", "cal pulse 1 9999 200\n", "unknown\n"};
     for (unsigned i=0;i<sizeof queries/sizeof queries[0];++i) {
         CHECK(command(&c,&a,queries[i],320,320,reply,&action)==1);
@@ -261,6 +263,154 @@ static bool test_reply_markers_and_capacity(void)
     return true;
 }
 
+/* 这些文字按资料包固件中的printf格式造出，不是实车抓包或验收数据。 */
+static bool test_driver_info_capture(void)
+{
+    rm_config_t config = rm_config_default();
+    rm_app_t a; rm_app_init(&a,&config,0);
+    rm_console_t c; rm_console_init(&c);
+    char reply[RM_CONSOLE_REPLY_CAP], frame[48]; rm_console_action_t action;
+    packet(&a," Motor_Version:V1.0.0\r\n Motor_type:2\r\n Dead_Zone:1900\r\n",10);
+    packet(&a,"$MAll:1,2,3,4#",11);
+    packet(&a," Pulse_Line:11\r\n Pulse_Phase:30\r\n wheel_diameter:80.125\r\n",12);
+    packet(&a," P:0.800 I:0.060 D:0.500\r\nread_flash:OK!\r\n",12);
+    CHECK(a.driver_info.fields==RM_DRIVER_ALL_FIELDS);
+    CHECK(!strcmp(a.driver_info.version,"V1.0.0") && a.driver_info.motor_type==2);
+    CHECK(a.driver_info.dead_zone==1900 && a.driver_info.pulse_line==11 && a.driver_info.pulse_phase==30);
+    CHECK(fabsf(a.driver_info.wheel_diameter_mm-80.125f)<0.0001f);
+    CHECK(a.driver_info.at_ms==12 && a.motor_at_ms==11);
+    packet(&a,"$MSPD:1250.25,-1500.5,0,1000#",13);
+    CHECK(!a.transport_fault && a.parser.malformed==0 && a.motor_at_ms==11);
+    CHECK(command(&c,&a,"driver info\n",20,20,reply,&action)==1 && action==RM_CONSOLE_NONE);
+    CHECK(strstr(reply,"fields=0x3F") && strstr(reply,"mtype=2") && strstr(reply,"mline=11"));
+    CHECK(strstr(reply,"mphase=30") && strstr(reply,"diameter_mm=80.125") && strstr(reply,"age_ms=8"));
+    CHECK(!a.config.motor_parameters_verified && !rm_config_motion_ready(&a.config));
+    CHECK(rm_app_step(&a,20,false,frame,sizeof frame) && !strcmp(frame,"$pwm:0,0,0,0#"));
+    /* 新read先清旧值。没有这次的回读时，不能还显示上次fields=0x3F。 */
+    CHECK(command(&c,&a,"driver read\n",21,21,reply,&action)==1 && action==RM_CONSOLE_READ_DRIVER);
+    CHECK(a.driver_info.fields==0 && a.driver_info.version[0]=='\0');
+    CHECK(command(&c,&a,"driver info\n",22,22,reply,&action)==1 && strstr(reply,"fields=0x00"));
+    /* $...#内部的字段名只是未知封包，不能冒充普通配置行。 */
+    packet(&a,"$Motor_type:1#\r\n",23);
+    CHECK(a.driver_info.fields==0 && !a.transport_fault);
+    packet(&a,"Motor_type:1\nPulse_Line:11\nwheel_diameter:80\n",24);
+    CHECK(a.driver_info.fields==(RM_DRIVER_TYPE|RM_DRIVER_LINE|RM_DRIVER_DIAMETER));
+    packet(&a,"Motor_type:9\nPulse_Line:65536\nwheel_diameter:nan\n",25);
+    CHECK(a.driver_info.fields==0 && a.driver_info.wheel_diameter_mm==0.0f);
+    CHECK(!a.transport_fault && a.motor_at_ms==11);
+    /* 读失败或行驶中拒绝查询时，不清掉原有记录。 */
+    packet(&a,"Motor_type:2\n",26);
+    a.safety.state=RM_ARMED;
+    CHECK(command(&c,&a,"driver read\n",27,27,reply,&action)==1 && strstr(reply,"ERR"));
+    CHECK(a.driver_info.fields==RM_DRIVER_TYPE);
+    return true;
+}
+
+static bool test_driver_info_boundaries(void)
+{
+    rm_config_t config = rm_config_default();
+    rm_app_t a; rm_app_init(&a,&config,0);
+    rm_console_t c; rm_console_init(&c);
+    char reply[RM_CONSOLE_REPLY_CAP]; rm_console_action_t action;
+    packet(&a,"Pulse_Li",1); packet(&a,"ne:11\n",52);
+    CHECK(a.driver_info.fields==0); /* 字节间超过50ms，旧半行不继续拼。 */
+    packet(&a,"Pulse_Li",UINT32_MAX-10u); packet(&a,"ne:11\n",7);
+    CHECK(a.driver_info.fields==RM_DRIVER_LINE && a.driver_info.pulse_line==11);
+    packet(&a,"Motor_type:2",8); /* 没有换行的半句不算收到字段。 */
+    CHECK(a.driver_info.fields==RM_DRIVER_LINE);
+    packet(&a,"\n",9); CHECK((a.driver_info.fields & RM_DRIVER_TYPE)!=0);
+    packet(&a,"Motor_type:",10);
+    for(unsigned i=0;i<RM_DRIVER_LINE_CAP+2u;++i) rm_app_receive(&a,'1',10);
+    packet(&a,"\nMotor_type:1\n",10);
+    CHECK(a.driver_info.motor_type==1 && !a.transport_fault);
+    packet(&a,"Dead_Zone:10\x01\n",11);
+    CHECK((a.driver_info.fields & RM_DRIVER_DEADZONE)==0);
+    packet(&a,"Pulse_Line:2147483648\nwheel_diameter:1e2\n",12);
+    CHECK((a.driver_info.fields & (RM_DRIVER_LINE|RM_DRIVER_DIAMETER))==0);
+    packet(&a,"Motor_Version:ABCDEFGHIJKLMNOPQ\n",13);
+    CHECK((a.driver_info.fields & RM_DRIVER_VERSION)==0);
+    packet(&a,"Motor_Version:V1.bad!\n",14);
+    CHECK((a.driver_info.fields & RM_DRIVER_VERSION)==0);
+    packet(&a," Motor_Version:ABCDEFGHIJKLMNOP \r\nMotor_type:4\nDead_Zone:3600\n",15);
+    packet(&a,"Pulse_Line:65535\nPulse_Phase:65535\nwheel_diameter:1000000\n",15);
+    CHECK(a.driver_info.fields==RM_DRIVER_ALL_FIELDS && !a.motor_seen);
+    CHECK(command(&c,&a,"driver info\n",UINT32_MAX,UINT32_MAX,reply,&action)==1);
+    CHECK(!strstr(reply,"ERR") && strstr(reply,"diameter_mm=1000000.000"));
+    CHECK(strlen(reply)<sizeof reply && !strcmp(reply+strlen(reply)-2,"\r\n"));
+    CHECK(command(&c,&a,"driver info extra\n",20,20,reply,&action)==1 && strstr(reply,"ERR"));
+    CHECK(!rm_config_motion_ready(&a.config) && !rm_config_calibration_ready(&a.config));
+    return true;
+}
+
+/* 分别从SELECT和电脑stop进入，检查行驶/单轮脉冲都立即归零。
+ * 这里模拟主控与UART正常的情况，实际电机停车效果留给架空测试记录。 */
+static bool test_software_stop_paths(void)
+{
+    for (unsigned scenario = 0; scenario < 4; ++scenario) {
+        bool calibration = scenario >= 2;
+        bool console_stop = (scenario & 1u) != 0;
+        rm_app_t app;
+        prepare(&app, !calibration, 0);
+        CHECK(app.config.software_stop_verified);
+        char frame[48];
+        if (calibration) {
+            CHECK(rm_app_cal_arm(&app, 320));
+            CHECK(rm_app_cal_pulse(&app, 320, 0, 50, 200));
+            fresh(&app, 340);
+            CHECK(rm_app_step(&app, 340, false, frame, sizeof frame));
+        } else {
+            app.remote.arm = true;
+            fresh(&app, 340);
+            CHECK(rm_app_step(&app, 340, false, frame, sizeof frame));
+            app.remote.arm = false;
+            app.remote.forward = 1;
+            fresh(&app, 360);
+            CHECK(rm_app_step(&app, 360, false, frame, sizeof frame));
+        }
+        CHECK(app.last_channel[0] != 0);
+        if (console_stop) {
+            rm_console_t console;
+            rm_console_init(&console);
+            char reply[RM_CONSOLE_REPLY_CAP];
+            rm_console_action_t action;
+            CHECK(command(&console, &app, "stop\n", 380, 380, reply, &action) == 1);
+            CHECK(action == RM_CONSOLE_STOP && strstr(reply, "fresh_START_required"));
+        } else {
+            app.remote.stop = true;
+            app.remote.arm = true; /* SELECT与START同时按，仍要先停车。 */
+        }
+        fresh(&app, 380);
+        CHECK(rm_app_step(&app, 380, false, frame, sizeof frame));
+        CHECK(!strcmp(frame, "$pwm:0,0,0,0#"));
+        CHECK(app.safety.state != RM_ARMED && app.calibration.state == RM_CAL_OFF);
+        CHECK(app.ramp.vx == 0 && app.ramp.vy == 0 && app.ramp.wz == 0);
+        app.remote.stop = false;
+        app.remote.arm = true;
+        app.remote.forward = 0;
+        for (uint32_t now = 400; now <= 760; now += 20) {
+            fresh(&app, now);
+            CHECK(rm_app_step(&app, now, false, frame, sizeof frame));
+            CHECK(app.safety.state != RM_ARMED && !strcmp(frame, "$pwm:0,0,0,0#"));
+        }
+    }
+    return true;
+}
+
+static bool test_driver_safety_query(void)
+{
+    rm_config_t config=rm_config_default(); rm_app_t a; rm_app_init(&a,&config,0);
+    rm_console_t c; rm_console_init(&c); char reply[RM_CONSOLE_REPLY_CAP]; rm_console_action_t action;
+    CHECK(command(&c,&a,"driver safety\n",10,10,reply,&action)==1 && action==RM_CONSOLE_NONE);
+    CHECK(strstr(reply,"spd_unit=mm_s") && strstr(reply,"command_loss=hold_last"));
+    CHECK(strstr(reply,"timeout_config=unsupported") && strstr(reply,"software_stop_verified=0 diameter_match=0"));
+    packet(&a,"wheel_diameter:80.000\r\n",11);
+    CHECK(command(&c,&a,"driver safety\n",12,12,reply,&action)==1 && strstr(reply,"diameter_match=1"));
+    CHECK(!a.config.software_stop_verified && !rm_config_motion_ready(&a.config) && !a.motor_seen);
+    CHECK(command(&c,&a,"driver safety set 1\n",13,13,reply,&action)==1 && strstr(reply,"ERR"));
+    CHECK(!a.config.software_stop_verified && action==RM_CONSOLE_NONE);
+    return true;
+}
+
 int main(void)
 {
     const struct { const char *name; bool (*run)(void); } groups[]={
@@ -268,7 +418,11 @@ int main(void)
         {"mode switch and timer wrap",test_mode_switch_and_wrap},
         {"console queries and framing",test_console_queries_and_framing},
         {"console actions and stale commands",test_console_actions_and_stale_commands},
-        {"reply markers and longest payload",test_reply_markers_and_capacity}
+        {"reply markers and longest payload",test_reply_markers_and_capacity},
+        {"driver plain-text configuration",test_driver_info_capture},
+        {"driver configuration boundaries",test_driver_info_boundaries},
+        {"SELECT and console stop in drive and calibration",test_software_stop_paths},
+        {"driver safety facts are read only",test_driver_safety_query}
     };
     for(unsigned i=0;i<sizeof groups/sizeof groups[0];++i) {
         if(!groups[i].run()) return 1;

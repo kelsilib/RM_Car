@@ -1,16 +1,23 @@
 """检查真实ARM产物的地址、向量和HEX/BIN一致性；不连接或操作开发板。"""
 from pathlib import Path
+import argparse
 import hashlib
 import json
 import struct
 import subprocess
+import uuid
 
 
-def verify(project):
+def verify(project, build_dir=None, expected_version=None):
     profile = json.loads((project / "PROJECT_PROFILE.json").read_text(encoding="utf-8-sig"))
     compiler_dir = Path(profile["compiler"]).parent
-    build = project / "build"
+    build = Path(build_dir) if build_dir is not None else project / "build"
     binary = (build / "rm_rct6.bin").read_bytes()
+    if expected_version is None:
+        expected_version = profile["firmware_id"]
+    # 主循环与version指令使用同一条完整文字，核对到行尾，避免把版本前缀认成另一构建。
+    version_line = b"version=" + expected_version.encode("ascii") + b"\r\n\0"
+    assert version_line in binary, "固件版本与本次构建目标不符"
     elf = (build / "rm_rct6.elf").read_bytes()
     assert elf[:4] == b"\x7fELF" and elf[4:6] == b"\x01\x01", "需要32位小端ELF"
     assert struct.unpack_from("<H", elf, 18)[0] == 40, "ELF不是ARM架构"
@@ -62,18 +69,28 @@ def verify(project):
             "hex_bin_equal":True, "scope":"artifact_structure_only",
             "sha256":{name:hashlib.sha256((build/name).read_bytes()).hexdigest()
                       for name in ("rm_rct6.bin","rm_rct6.elf","rm_rct6.hex")},
+            "build_directory":str(build.resolve()), "expected_version":expected_version,
             "flashed":False, "hardware_tested":False}
 
 
 def main():
     project = Path(__file__).resolve().parents[1]
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--build-dir", type=Path, default=project / "build")
+    parser.add_argument("--expected-version")
+    parser.add_argument("--json", type=Path)
+    args = parser.parse_args()
+    report_path = args.json or project / "reports" / ("artifact-check-" + uuid.uuid4().hex[:8] + ".json")
     try:
-        report = verify(project)
+        if report_path.exists():
+            raise ValueError("报告已存在，请选择新的文件名")
+        report = verify(project, args.build_dir, args.expected_version)
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        with report_path.open("x", encoding="utf-8") as report_file:
+            report_file.write(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
     except (OSError, ValueError, AssertionError, subprocess.CalledProcessError, struct.error) as exc:
         print("固件内容检查失败：" + str(exc))
         return 1
-    (project / "reports/software-artifact-check.json").write_text(
-        json.dumps(report, ensure_ascii=False, indent=2)+"\n", encoding="utf-8")
     print(f"固件内容检查通过：Flash {report['flash_bytes']}字节，RAM含预留{report['ram_including_reserves_bytes']}字节")
     print("已核对ARM架构、初始栈、4个关键向量、HEX校验和及HEX/BIN内容。")
     return 0

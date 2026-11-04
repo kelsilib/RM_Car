@@ -5,12 +5,16 @@
 #include "motor_uart.h"
 #include "safety.h"
 #include "calibration.h"
+#include "arm_control.h"
 
 typedef struct {
     rm_config_t config;             /* 启动时复制的配置；默认值在board_config.c */
     rm_motor_parser_t parser;       /* 收包进度和计数；malformed/unknown对应日志bad/unknown */
+    rm_driver_info_t driver_info;   /* 普通配置文本的回读结果；不代替接线/保护验收 */
     rm_safety_t safety;             /* 最先观察state/inhibit，定位为什么不能解锁 */
     rm_remote_t remote;             /* PS2调试重点：valid、forward/left/yaw、arm/stop */
+    rm_arm_t arm;                   /* S1承载K210的升降台，S2～S7供机械臂逐路控制 */
+    bool servo_hardware_ready;      /* 主循环初始化TIM3/TIM4成功后才为true；PC测试可模拟 */
     rm_motor_packet_t last_packet;  /* 最近一份合法电机报文；先看kind，再看对应字段 */
     rm_twist_t ramp;                /* 缓慢调整后的车体速度，单位m/s、rad/s；禁动时清零 */
     uint32_t motor_at_ms, last_step_ms; /* 最后合法累计帧时间 / 最后控制检查时间ms */
