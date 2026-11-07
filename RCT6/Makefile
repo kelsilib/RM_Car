@@ -26,7 +26,7 @@ CFLAGS += $(EXTRA_CFLAGS)
 LDFLAGS = $(MCU) --specs=nano.specs --specs=nosys.specs -Ttarget/STM32F103RCTX_FLASH.ld \
           -Wl,--gc-sections,-Map=$(BUILD_DIR)/$(TARGET).map,--print-memory-usage
 
-.PHONY: all test check-ps2
+.PHONY: all test test-shovel test-arm-pair check-ps2
 all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
 
 $(BUILD_DIR):
@@ -72,13 +72,94 @@ $(BUILD_DIR)/test_arm.exe: $(CORE_SOURCES) tests/test_arm.c $(wildcard include/*
 $(BUILD_DIR)/test_arm_main.exe: $(CORE_SOURCES) tests/test_arm_main.c $(BUILD_DIR)/test_firmware_main.o $(wildcard include/*.h) target/board_servo.h Makefile | $(BUILD_DIR)
 	"$(HOST_CC)" $(HOST_CFLAGS) $(CORE_SOURCES) tests/test_arm_main.c $(BUILD_DIR)/test_firmware_main.o -lm -o $@
 
-test: $(BUILD_DIR)/test_core.exe $(BUILD_DIR)/test_startup.exe $(BUILD_DIR)/test_service.exe $(BUILD_DIR)/test_ps2.exe $(BUILD_DIR)/test_arm.exe $(BUILD_DIR)/test_arm_main.exe
+$(BUILD_DIR)/test_bench.exe: $(CORE_SOURCES) tests/test_bench.c $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) -DRM_BENCH_TEST=1 $(CORE_SOURCES) tests/test_bench.c -lm -o $@
+
+$(BUILD_DIR)/test_bench_disabled.exe: $(CORE_SOURCES) tests/test_bench.c $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) $(CORE_SOURCES) tests/test_bench.c -lm -o $@
+
+$(BUILD_DIR)/test_bench_main.o: target/main.c $(wildcard target/*.h) $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) -DRM_BENCH_TEST=1 -DRM_PS2_WIRED=1 -DRM_ARM_WIRED=0 -Dmain=rm_firmware_main -c target/main.c -o $@
+
+$(BUILD_DIR)/test_bench_main.exe: $(CORE_SOURCES) tests/test_startup.c $(BUILD_DIR)/test_bench_main.o $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) -DRM_BENCH_TEST=1 $(CORE_SOURCES) tests/test_startup.c $(BUILD_DIR)/test_bench_main.o -lm -o $@
+
+$(BUILD_DIR)/test_field.exe: $(CORE_SOURCES) tests/test_field.c $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) -DRM_BENCH_TEST=1 -DRM_FIELD_DRIVE=1 $(CORE_SOURCES) tests/test_field.c -lm -o $@
+
+$(BUILD_DIR)/test_field_main.o: target/main.c $(wildcard target/*.h) $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) -DRM_BENCH_TEST=1 -DRM_FIELD_DRIVE=1 -DRM_PS2_WIRED=1 -DRM_ARM_WIRED=0 -Dmain=rm_firmware_main -c target/main.c -o $@
+
+$(BUILD_DIR)/test_field_main.exe: $(CORE_SOURCES) tests/test_field_main.c $(BUILD_DIR)/test_field_main.o $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) -DRM_BENCH_TEST=1 -DRM_FIELD_DRIVE=1 $(CORE_SOURCES) tests/test_field_main.c $(BUILD_DIR)/test_field_main.o -lm -o $@
+
+$(BUILD_DIR)/test_match.exe: $(CORE_SOURCES) tests/test_match.c $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) -DRM_BENCH_TEST=1 -DRM_FIELD_DRIVE=1 $(CORE_SOURCES) tests/test_match.c -lm -o $@
+
+$(BUILD_DIR)/test_match_main.exe: $(CORE_SOURCES) tests/test_match_main.c $(BUILD_DIR)/test_field_main.o $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) -DRM_BENCH_TEST=1 -DRM_FIELD_DRIVE=1 $(CORE_SOURCES) tests/test_match_main.c $(BUILD_DIR)/test_field_main.o -lm -o $@
+
+$(BUILD_DIR)/test_servo_cal.exe: $(CORE_SOURCES) tests/test_servo_cal.c $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) -DRM_SERVO_CAL_CHANNEL=2 $(CORE_SOURCES) tests/test_servo_cal.c -lm -o $@
+
+$(BUILD_DIR)/test_servo_cal_main.o: target/servo_cal_main.c $(wildcard target/*.h) $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) -DRM_SERVO_CAL_CHANNEL=2 -DRM_PS2_WIRED=1 -DRM_ARM_WIRED=1 -Dmain=rm_firmware_main -c target/servo_cal_main.c -o $@
+
+$(BUILD_DIR)/test_servo_cal_main.exe: $(CORE_SOURCES) tests/test_servo_cal_main.c $(BUILD_DIR)/test_servo_cal_main.o $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) -DRM_SERVO_CAL_CHANNEL=2 $(CORE_SOURCES) tests/test_servo_cal_main.c $(BUILD_DIR)/test_servo_cal_main.o -lm -o $@
+
+test: $(BUILD_DIR)/test_core.exe $(BUILD_DIR)/test_startup.exe $(BUILD_DIR)/test_service.exe $(BUILD_DIR)/test_ps2.exe $(BUILD_DIR)/test_arm.exe $(BUILD_DIR)/test_arm_main.exe $(BUILD_DIR)/test_bench.exe $(BUILD_DIR)/test_bench_disabled.exe $(BUILD_DIR)/test_bench_main.exe $(BUILD_DIR)/test_field.exe $(BUILD_DIR)/test_field_main.exe $(BUILD_DIR)/test_match.exe $(BUILD_DIR)/test_match_main.exe $(BUILD_DIR)/test_servo_cal.exe $(BUILD_DIR)/test_servo_cal_main.exe
 	./$(BUILD_DIR)/test_core.exe
 	./$(BUILD_DIR)/test_startup.exe
 	./$(BUILD_DIR)/test_service.exe
 	./$(BUILD_DIR)/test_ps2.exe
 	./$(BUILD_DIR)/test_arm.exe
 	./$(BUILD_DIR)/test_arm_main.exe
+	./$(BUILD_DIR)/test_bench.exe
+	./$(BUILD_DIR)/test_bench_disabled.exe
+	./$(BUILD_DIR)/test_bench_main.exe
+	./$(BUILD_DIR)/test_field.exe
+	./$(BUILD_DIR)/test_field_main.exe
+	./$(BUILD_DIR)/test_match.exe
+	./$(BUILD_DIR)/test_match_main.exe
+	./$(BUILD_DIR)/test_servo_cal.exe
+	./$(BUILD_DIR)/test_servo_cal_main.exe
+
+$(BUILD_DIR)/test_shovel.exe: $(CORE_SOURCES) tests/test_shovel.c $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) -DRM_SHOVEL_CONTROL=1 -DRM_SERVO_CAL_CHANNEL=2 $(CORE_SOURCES) tests/test_shovel.c -lm -o $@
+
+$(BUILD_DIR)/test_shovel_main.o: target/shovel_main.c $(wildcard target/*.h) $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) -DRM_SHOVEL_CONTROL=1 -DRM_SERVO_CAL_CHANNEL=2 -DRM_PS2_WIRED=1 -DRM_ARM_WIRED=1 -Dmain=rm_firmware_main -c target/shovel_main.c -o $@
+
+$(BUILD_DIR)/test_shovel_main.exe: $(CORE_SOURCES) tests/test_shovel_main.c $(BUILD_DIR)/test_shovel_main.o $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) -DRM_SHOVEL_CONTROL=1 -DRM_SERVO_CAL_CHANNEL=2 $(CORE_SOURCES) tests/test_shovel_main.c $(BUILD_DIR)/test_shovel_main.o -lm -o $@
+
+test: test-shovel
+
+test-shovel: $(BUILD_DIR)/test_shovel.exe $(BUILD_DIR)/test_shovel_main.exe
+	./$(BUILD_DIR)/test_shovel.exe
+	./$(BUILD_DIR)/test_shovel_main.exe
+
+PAIR_FLAGS = -DRM_ARM_PAIR_CONTROL=1 -DRM_SHOVEL_CONTROL=1 -DRM_SERVO_CAL_CHANNEL=2 -DRM_PS2_WIRED=1 -DRM_ARM_WIRED=1
+
+$(BUILD_DIR)/test_joint_pair.exe: $(CORE_SOURCES) tests/test_joint_pair.c $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) $(PAIR_FLAGS) $(CORE_SOURCES) tests/test_joint_pair.c -lm -o $@
+
+$(BUILD_DIR)/test_arm_pair_main.o: target/shovel_main.c $(wildcard target/*.h) $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) $(PAIR_FLAGS) -Dmain=rm_firmware_main -c target/shovel_main.c -o $@
+
+$(BUILD_DIR)/test_arm_pair_main.exe: $(CORE_SOURCES) tests/test_arm_pair_main.c $(BUILD_DIR)/test_arm_pair_main.o $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) $(PAIR_FLAGS) $(CORE_SOURCES) tests/test_arm_pair_main.c $(BUILD_DIR)/test_arm_pair_main.o -lm -o $@
+
+$(BUILD_DIR)/test_board_servo_pair.exe: $(CORE_SOURCES) target/board_servo.c tests/test_board_servo_pair.c tests/fakes/stm32f1xx_hal.h $(wildcard include/*.h) Makefile | $(BUILD_DIR)
+	"$(HOST_CC)" $(HOST_CFLAGS) -Itests/fakes $(PAIR_FLAGS) $(CORE_SOURCES) target/board_servo.c tests/test_board_servo_pair.c -lm -o $@
+
+test: test-arm-pair
+
+test-arm-pair: $(BUILD_DIR)/test_joint_pair.exe $(BUILD_DIR)/test_arm_pair_main.exe $(BUILD_DIR)/test_board_servo_pair.exe
+	./$(BUILD_DIR)/test_joint_pair.exe
+	./$(BUILD_DIR)/test_arm_pair_main.exe
+	./$(BUILD_DIR)/test_board_servo_pair.exe
 
 # 只检查PS2接线代码能否编译；不会改变正式固件中“默认关闭PS2”的设置。
 check-ps2: | $(BUILD_DIR)

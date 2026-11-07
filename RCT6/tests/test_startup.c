@@ -30,6 +30,7 @@ typedef struct {
     const char *commands;
     unsigned command_ms, debug_error_ms;
     bool enable_calibration, expect_calibration, stale_commands;
+    bool bench_test; /* 仅PC模型准备联调会话，生产配置仍保持未验收。 */
     debug_fault_stage_t debug_fault_stage;
 } scenario_t;
 
@@ -200,7 +201,7 @@ bool board_motor_send(const char *frame)
         if (cal_pwm) {
             if (debug_failed || (scenario->debug_error_ms && ms >= scenario->debug_error_ms))
                 ++calibration_outputs_after_fault;
-            if (!scenario->enable_calibration || g_app.safety.state!=RM_CALIBRATING) unexpected_motion=true;
+            if ((!scenario->enable_calibration && !scenario->bench_test) || g_app.safety.state!=RM_CALIBRATING) unexpected_motion=true;
             if (!calibration_moved) cal_started_ms=ms;
             calibration_moved=cal_running=true;
         } else if (last_control_was_pwm0 && cal_running) {
@@ -255,8 +256,10 @@ void board_debug(const char *message)
     if (!strncmp(message,"reply ",6)) message += 6;
     if(!strncmp(message,"ps2 ",4)) saw_ps2=true;
     if(!strncmp(message,"counts ",7)) saw_counts=true;
-    if ((scenario->debug_fault_stage == DEBUG_ARM_REPLY && !strncmp(message,"OK cal_ready",12)) ||
-        (scenario->debug_fault_stage == DEBUG_PULSE_REPLY && !strncmp(message,"OK one_pulse_queued",19))) {
+    if ((scenario->debug_fault_stage == DEBUG_ARM_REPLY &&
+         (!strncmp(message,"OK cal_ready",12) || !strncmp(message,"OK bench state=2",16))) ||
+        (scenario->debug_fault_stage == DEBUG_PULSE_REPLY &&
+         (!strncmp(message,"OK one_pulse_queued",19) || !strncmp(message,"OK bench state=3",16)))) {
         advance(20000); /* 对应真实调试串口发送的20ms等待上限。 */
         debug_failed=true;
         return;
@@ -266,7 +269,8 @@ void board_debug(const char *message)
 bool board_debug_fault(void)
 {
     /* pulse_started在生成首条PWM时置位，模拟计算后、发送前刚发生接收错误。 */
-    if (scenario->debug_fault_stage == DEBUG_BEFORE_SEND && g_app.calibration.pulse_started)
+    if (scenario->debug_fault_stage == DEBUG_BEFORE_SEND &&
+        (g_app.calibration.pulse_started || g_app.bench.started))
         debug_failed=true;
     return debug_failed || (scenario->debug_error_ms && elapsed_ms()>=scenario->debug_error_ms);
 }
@@ -279,6 +283,10 @@ bool board_debug_read(uint8_t *byte, uint32_t *at)
 }
 bool board_ps2_start(void)
 {
+    if (!setups && scenario->bench_test) {
+        (void)rm_bench_begin(&g_app.bench);
+        g_app.bench.stop_checks = RM_BENCH_SELECT_SEEN | RM_BENCH_STOP_SEEN;
+    }
     if (!setups && scenario->verified_config) {
         g_app.config = test_config();
         if (scenario->no_software_stop) g_app.config.software_stop_verified=false;
@@ -301,9 +309,11 @@ bool board_ps2_read(rm_remote_t *remote)
     last_poll_at = tick();
     ++polls;
     bool ok = rm_ps2_poll(&bus, tick(), remote);
-    if (g_app.calibration.state == RM_CAL_PULSE &&
-        ((scenario->debug_fault_stage == DEBUG_POLL_PENDING && !g_app.calibration.pulse_started) ||
-         (scenario->debug_fault_stage == DEBUG_POLL_RUNNING && g_app.calibration.pulse_started)))
+    bool pulse_pending = g_app.calibration.state == RM_CAL_PULSE || g_app.bench.state == RM_BENCH_WHEEL_PULSE;
+    bool pulse_started = g_app.calibration.pulse_started || g_app.bench.started;
+    if (pulse_pending &&
+        ((scenario->debug_fault_stage == DEBUG_POLL_PENDING && !pulse_started) ||
+         (scenario->debug_fault_stage == DEBUG_POLL_RUNNING && pulse_started)))
         debug_failed=true;
     return ok;
 }
@@ -367,6 +377,26 @@ static bool run_scenario(const scenario_t *test)
 int main(void)
 {
     const scenario_t cases[] = {
+#if RM_BENCH_TEST
+        {.name="bench main one bounded pulse", .bench_test=true,
+         .commands="bench arm\nbench pulse 1 50 200\n", .command_ms=400,
+         .expect_motor_fresh=true,.expect_remote=true,.expect_calibration=true},
+        {.name="bench main failed arm reply locks session", .bench_test=true,
+         .commands="bench arm\nbench pulse 1 50 200\n", .command_ms=400,.debug_fault_stage=DEBUG_ARM_REPLY,
+         .expect_motor_fresh=true,.expect_remote=true,.expect_fault=true},
+        {.name="bench main failed pulse reply revokes pending output", .bench_test=true,
+         .commands="bench arm\nbench pulse 1 50 200\n", .command_ms=400,.debug_fault_stage=DEBUG_PULSE_REPLY,
+         .expect_motor_fresh=true,.expect_remote=true,.expect_fault=true},
+        {.name="bench main RX fault while polling pending pulse", .bench_test=true,
+         .commands="bench arm\nbench pulse 1 50 200\n", .command_ms=400,.debug_fault_stage=DEBUG_POLL_PENDING,
+         .expect_motor_fresh=true,.expect_remote=true,.expect_fault=true},
+        {.name="bench main RX fault while polling active pulse", .bench_test=true,
+         .commands="bench arm\nbench pulse 1 50 200\n", .command_ms=400,.debug_fault_stage=DEBUG_POLL_RUNNING,
+         .expect_motor_fresh=true,.expect_remote=true,.expect_fault=true,.expect_calibration=true},
+        {.name="bench main fault before write replaces old PWM", .bench_test=true,
+         .commands="bench arm\nbench pulse 1 50 200\n", .command_ms=400,.debug_fault_stage=DEBUG_BEFORE_SEND,
+         .expect_motor_fresh=true,.expect_remote=true,.expect_fault=true},
+#endif
         {.name="production config stays stopped", .remote_script=DRIVE,
          .expect_motor_fresh=true, .expect_remote=true},
         {.name="software stop acceptance missing keeps motion inhibited", .verified_config=true,

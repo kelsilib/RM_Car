@@ -22,6 +22,20 @@ void rm_app_init(rm_app_t *a, const rm_config_t *c, uint32_t now)
     rm_arm_config_t arm_config = rm_arm_config_default();
     rm_arm_init(&a->arm, &arm_config, now);
     rm_safety_init(&a->safety);
+    rm_bench_init(&a->bench);
+#if RM_SHOVEL_CONTROL
+    rm_shovel_init(&a->shovel,now);
+#endif
+#if RM_ARM_PAIR_CONTROL
+    rm_joint_pair_init(&a->joint_pair);
+#endif
+#if RM_SERVO_CAL_CHANNEL
+    rm_servo_cal_init(&a->servo_cal, RM_SERVO_CAL_CHANNEL, now);
+#endif
+#if RM_FIELD_DRIVE
+    /* 专用行走版进入等待许可状态。生产验收标志仍分别保留，START/R2不自动按下。 */
+    (void)rm_bench_begin(&a->bench);
+#endif
 }
 
 void rm_app_receive(rm_app_t *a, uint8_t byte, uint32_t now)
@@ -44,6 +58,10 @@ void rm_app_receive(rm_app_t *a, uint8_t byte, uint32_t now)
             a->battery_seen = true;
             a->battery_v = packet.battery_v;
             a->battery_at_ms = now;
+        } else if (packet.kind == RM_PACKET_SPEED) {
+            a->motor_speed_seen = true;
+            a->motor_speed_at_ms = now;
+            memcpy(a->motor_speeds, packet.speeds, sizeof a->motor_speeds);
         }
     }
     /* 保留原来的未知封包查询；不带$和#的配置行由driver_info另外记录。两者都不放行运动。 */
@@ -63,6 +81,13 @@ void rm_app_receive(rm_app_t *a, uint8_t byte, uint32_t now)
 void rm_app_transport_fault(rm_app_t *a)
 {
     a->transport_fault = true;
+#if RM_SHOVEL_CONTROL
+    rm_shovel_fault(&a->shovel);
+#endif
+#if RM_ARM_PAIR_CONTROL
+    rm_joint_pair_stop(&a->joint_pair);
+#endif
+    rm_bench_stop(&a->bench);
     rm_arm_stop(&a->arm);
     rm_cal_cancel(&a->calibration);
     a->safety.state = a->estop_active ? RM_ESTOP : RM_FAULT;
@@ -75,6 +100,7 @@ void rm_app_transport_fault(rm_app_t *a)
 
 static void stop_chassis(rm_app_t *a)
 {
+    rm_bench_stop(&a->bench);
     rm_cal_cancel(&a->calibration);
     rm_safety_init(&a->safety);
     a->safety.previous_arm = a->remote.arm;
@@ -91,17 +117,26 @@ static void stop_chassis(rm_app_t *a)
 
 void rm_app_stop(rm_app_t *a)
 {
+#if RM_SHOVEL_CONTROL
+    rm_shovel_stop(&a->shovel);
+#endif
+#if RM_ARM_PAIR_CONTROL
+    rm_joint_pair_stop(&a->joint_pair);
+#endif
+#if RM_SERVO_CAL_CHANNEL
+    rm_servo_cal_stop(&a->servo_cal);
+#endif
     stop_chassis(a);
     rm_arm_stop(&a->arm); /* SELECT/电脑stop冻结机械臂，不能把承重舵机突然卸力。 */
 }
 
 bool rm_app_output_active(const rm_app_t *a)
 {
-    return a->arm.mode || a->arm.armed || a->safety.state == RM_ARMED || a->safety.state == RM_CALIBRATING ||
+    return rm_bench_active(&a->bench) || a->arm.mode || a->arm.armed || a->safety.state == RM_ARMED || a->safety.state == RM_CALIBRATING ||
         a->calibration.state != RM_CAL_OFF;
 }
 
-static rm_safety_input_t safety_input(const rm_app_t *a, uint32_t now, bool estop)
+rm_safety_input_t rm_app_safety_input(const rm_app_t *a, uint32_t now, bool estop)
 {
     return (rm_safety_input_t){
         .remote=a->remote, .motor_seen=a->motor_seen, .motor_at_ms=a->motor_at_ms,
@@ -112,8 +147,8 @@ static rm_safety_input_t safety_input(const rm_app_t *a, uint32_t now, bool esto
 
 bool rm_app_cal_arm(rm_app_t *a, uint32_t now)
 {
-    if (a->arm.mode || a->arm.armed || a->safety.state == RM_ARMED) return false;
-    rm_safety_input_t input = safety_input(a, now, a->estop_active);
+    if (a->bench.state != RM_BENCH_OFF || a->arm.mode || a->arm.armed || a->safety.state == RM_ARMED) return false;
+    rm_safety_input_t input = rm_app_safety_input(a, now, a->estop_active);
     if (!rm_cal_arm(&a->calibration, &a->config, &input, now)) return false;
     rm_safety_init(&a->safety);
     a->safety.state = RM_CALIBRATING;
@@ -125,7 +160,7 @@ bool rm_app_cal_arm(rm_app_t *a, uint32_t now)
 bool rm_app_cal_pulse(rm_app_t *a, uint32_t now, unsigned channel, int pwm, unsigned duration_ms)
 {
     if (a->safety.state != RM_CALIBRATING) return false;
-    rm_safety_input_t input = safety_input(a, now, a->estop_active);
+    rm_safety_input_t input = rm_app_safety_input(a, now, a->estop_active);
     return rm_cal_pulse(&a->calibration, &a->config, &input, now, channel, pwm, duration_ms);
 }
 
@@ -152,12 +187,62 @@ bool rm_app_step(rm_app_t *a, uint32_t now, bool estop, char *frame, size_t cap)
      * 断点和单步也会造成停顿，所以调试前要断开电机动力。 */
     uint32_t elapsed = now - a->last_step_ms;
     a->estop_active = estop;
-    rm_safety_input_t input = safety_input(a, now, estop);
+    rm_safety_input_t input = rm_app_safety_input(a, now, estop);
     a->last_step_ms = now;
     /* 不允许动就直接发PWM0，并忘掉上次速度；停车指令不等待缓慢减速。 */
     const int32_t zero[RM_WHEELS] = {0};
+    int32_t bench_channel[RM_WHEELS];
+    bool bench_speed;
+#if RM_FIELD_DRIVE
+    /* 比赛版用整车START统一许可。进入L2或运行机构预设只暂停行走，不反复解锁。
+     * 电机零命令由main先发送，之后才写舵机PWM，机构动作期间底盘保持停车。 */
+    bool was_automatic = a->arm.automatic_mask != 0;
+    (void)rm_bench_step(&a->bench, &a->config, &a->driver_info, &input, now, elapsed,
+                         bench_channel, &bench_speed);
+    if (a->arm.io_fault) {
+        rm_bench_stop(&a->bench);
+        a->bench.inhibit |= RM_BENCH_ARM_IO;
+        memset(bench_channel, 0, sizeof bench_channel);
+        bench_speed = false; /* 舵机写入/电脑故障已锁存时，整车也退出比赛许可。 */
+    }
+    rm_cal_cancel(&a->calibration);
+    bool match_enabled = a->bench.state == RM_BENCH_DRIVE_ACTIVE && !a->bench.inhibit;
+    rm_arm_match_step(&a->arm, &a->config, &a->remote, now, match_enabled, estop,
+                       !a->transport_fault, a->servo_hardware_ready, elapsed <= 100u);
+    bool mechanism_active = a->arm.mode || was_automatic || a->arm.automatic_mask;
+    if (mechanism_active) {
+        memset(bench_channel, 0, sizeof bench_channel);
+        bench_speed = false;
+        a->bench.ramp = (rm_twist_t){0};
+        a->bench.throttle_release_required = true;
+    }
+    a->ramp = a->bench.ramp;
+    memset(a->last_wheel, 0, sizeof a->last_wheel);
+    a->safety.inhibit = a->bench.inhibit;
+    if (mechanism_active) a->safety.inhibit |= RM_INHIBIT_ARM_MODE;
+    a->safety.state = a->bench.inhibit ? (estop ? RM_ESTOP : RM_FAULT) :
+        (match_enabled ? RM_ARMED :
+         (a->bench.state == RM_BENCH_WHEEL_READY || a->bench.state == RM_BENCH_WHEEL_PULSE ?
+          RM_CALIBRATING : RM_DISARMED));
+    return output(a, bench_speed, bench_channel, frame, cap);
+#endif
     bool was_arm_mode = a->arm.mode;
     bool arm_mode = (a->remote.buttons & RM_PS2_L2) != 0;
+    /* 以下为默认/手动标定构建。逐路许可步骤留在这条路径，比赛入口在上方。 */
+    if (rm_bench_step(&a->bench, &a->config, &a->driver_info, &input, now, elapsed,
+                       bench_channel, &bench_speed)) {
+        /* 联调入口接管时，常规行驶、原单轮标定和舵机控制不同时执行。 */
+        rm_cal_cancel(&a->calibration);
+        rm_arm_stop(&a->arm);
+        a->ramp = a->bench.ramp;
+        memset(a->last_wheel, 0, sizeof a->last_wheel);
+        a->safety.inhibit = a->bench.inhibit;
+        a->safety.state = a->bench.inhibit ? (estop ? RM_ESTOP : RM_FAULT) :
+            (a->bench.state == RM_BENCH_DRIVE_ACTIVE ? RM_ARMED :
+             (a->bench.state == RM_BENCH_WHEEL_READY || a->bench.state == RM_BENCH_WHEEL_PULSE ?
+              RM_CALIBRATING : RM_DISARMED));
+        return output(a, bench_speed, bench_channel, frame, cap);
+    }
     if (arm_mode || was_arm_mode) {
         /* 进入或离开机械臂模式，都撤销底盘/单轮许可。切回底盘不能沿用按住的START。 */
         stop_chassis(a);

@@ -6,7 +6,8 @@
 /* 每条指令回复都带reply前缀，和自动状态/开机日志区分；留足空间保留完整驱动原文。 */
 #define RM_CONSOLE_REPLY_PREFIX "reply "
 #define RM_CONSOLE_REPLY_CAP 192u
-typedef enum { RM_CONSOLE_NONE, RM_CONSOLE_STOP, RM_CONSOLE_READ_DRIVER, RM_CONSOLE_READ_VOLTAGE } rm_console_action_t;
+typedef enum { RM_CONSOLE_NONE, RM_CONSOLE_STOP, RM_CONSOLE_READ_DRIVER,
+               RM_CONSOLE_READ_VOLTAGE, RM_CONSOLE_READ_SPEED } rm_console_action_t;
 typedef struct {
     char line[RM_CONSOLE_LINE_CAP];
     size_t length;

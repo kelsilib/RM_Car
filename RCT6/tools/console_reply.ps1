@@ -13,9 +13,28 @@ function Get-BoardCommandResult {
         '^status$' { '^state=[0-9]+ inhibit=0x[0-9A-Fa-f]+ '; break }
         '^ps2$' { '^ps2 valid='; break }
         '^arm$' { '^arm mode='; break }
+        '^shovel$' { '^shovel (ready|enabled)='; break }
+        '^joints$' { '^joints selected='; break }
+        '^shovel pulses -?[0-9]+ -?[0-9]+$' { '^OK shovel pulses_set; START_required$'; break }
+        '^scal$' { '^scal channel='; break }
+        '^scal result$' { '^scal_result channel='; break }
+        '^scal (confirm|arm|center)$' { '^OK scal accepted; inspect_scal_for_applied_pulse$'; break }
+        '^scal step -?[0-9]+$' { '^OK scal accepted; inspect_scal_for_applied_pulse$'; break }
+        '^scal dir -?1$' { '^OK scal accepted; inspect_scal_for_applied_pulse$'; break }
+        '^scal mark (min|max|start|a|b)$' { '^OK scal accepted; inspect_scal_for_applied_pulse$'; break }
+        '^poses 0*([1-7])$' { ('^poses channel=' + $Matches[1] + ' '); break }
         '^servo 0*([1-7])$' { ('^servo channel=' + $Matches[1] + ' '); break }
         '^counts$' { '^counts seen='; break }
+        '^wheels$' { '^wheels speed_seen='; break }
+        '^wheels read$' { '^OK query_queued; inspect_feedback_not_ACK$'; break }
         '^config$' { '^config issues='; break }
+        '^bench$' { '^bench built='; break }
+        '^bench on$' { '^OK bench state=1$'; break }
+        '^bench off$' { '^OK bench state=0$'; break }
+        '^bench arm$' { '^OK bench state=2$'; break }
+        '^bench drive$' { '^OK bench state=4$'; break }
+        '^bench dir 0*[1-4] -?1$' { '^OK bench state=1$'; break }
+        '^bench pulse 0*[1-4] -?[0-9]+ [0-9]+$' { '^OK bench state=3$'; break }
         '^output$' { '^output mode='; break }
         '^battery$' { '^battery seen='; break }
         '^driver reply$' { '^driver_reply seen='; break }

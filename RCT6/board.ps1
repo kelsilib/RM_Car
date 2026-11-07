@@ -193,7 +193,7 @@ try {
     try {
         $boardSerial.Open()
         if ($Mode -eq 'Terminal') {
-            Write-Host '输入help看指令；exit退出电脑终端。标定时先cal arm，再在5秒内发送一次cal pulse。'
+            Write-Host '输入help查看当前固件的指令，exit退出电脑终端。S2按键版用shovel查询状态。'
             while ($true) {
                 $boardLine = Read-Host 'RM'
                 if ($null -eq $boardLine -or $boardLine -eq 'exit') { break }

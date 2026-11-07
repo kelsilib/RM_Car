@@ -201,6 +201,29 @@ static bool lift_shortcut(void)
     return true;
 }
 
+static bool shovel_shortcut(void)
+{
+    rig_t t;
+    init(&t, 0);
+    t.a.selected = 4;
+    arm(&t);
+    CHECK(t.a.armed && t.a.applied_mask == (1u << 4));
+    step(&t, 20, RM_PS2_L2 | RM_PS2_CIRCLE, 0, true);
+    CHECK(t.a.selected == 1 && !t.a.armed && t.a.applied_us[1] == 0);
+    step(&t, 20, RM_PS2_L2 | RM_PS2_CIRCLE | RM_PS2_START, 0, true);
+    CHECK(!t.a.armed);
+    arm(&t);
+    CHECK(t.a.armed && t.a.applied_us[1] == 1500);
+    step(&t, 20, RM_PS2_L2 | RM_PS2_R2, 1, true);
+    CHECK(t.a.applied_us[1] == 1520 && t.a.applied_us[4] == 1500);
+    step(&t, 20, RM_PS2_L2 | RM_PS2_R2 | RM_PS2_TRIANGLE, 0, true);
+    CHECK(t.a.selected == 1);
+    step(&t, 20, RM_PS2_L2, 0, true);
+    step(&t, 20, RM_PS2_L2 | RM_PS2_TRIANGLE | RM_PS2_CIRCLE, 0, true);
+    CHECK(t.a.selected == 1);
+    return true;
+}
+
 static bool app_and_console(void)
 {
     rm_config_t c=rm_config_default();
@@ -224,13 +247,89 @@ static bool app_and_console(void)
     rm_app_transport_fault(&a);CHECK(a.arm.pulse_us[0]==1500 && !a.arm.armed);
     rm_console_t console;rm_console_init(&console);
     char reply[RM_CONSOLE_REPLY_CAP];rm_console_action_t action;
-    const char *queries[]={"arm\n","servo 1\n","servo 7\n","ps2\n","help\n","servo 0\n","servo 8\n"};
-    for(unsigned i=0;i<7;++i) {
+    const char *queries[]={"arm\n","servo 1\n","servo 7\n","ps2\n","help\n","shovel\n","servo 0\n","servo 8\n"};
+    for(unsigned i=0;i<8;++i) {
         bool ready=false;
         for(const char *s=queries[i];*s;++s)ready=rm_console_feed(&console,&a,(uint8_t)*s,400,400,reply,sizeof reply,&action);
         CHECK(ready && strlen(reply)<sizeof reply && strstr(reply,"\r\n"));
-        CHECK((strstr(reply,"ERR")!=NULL)==(i>=5));
+        CHECK((strstr(reply,"ERR")!=NULL)==(i>=6));
+        if (i == 1) CHECK(strstr(reply,"role=lift"));
+        if (i == 4) CHECK(strstr(reply,"shovel") && strstr(reply,"\r\n"));
+        if (i == 5) CHECK(strstr(reply,"shovel ready=0"));
     }
+    return true;
+}
+
+static bool joint_buttons_and_start_toggle(void)
+{
+    rig_t t;
+    init(&t, 0);
+    arm(&t);
+    CHECK(t.a.armed);
+    step(&t, 20, RM_PS2_L2, 0, true);
+    step(&t, 20, RM_PS2_L2 | RM_PS2_START | RM_PS2_R2, 1, true);
+    CHECK(!t.a.armed && t.a.pulse_us[0] == 1500);
+    for (unsigned i = 0; i < 30; ++i) step(&t, 20, RM_PS2_L2 | RM_PS2_START, 0, true);
+    CHECK(!t.a.armed);
+
+    const uint16_t keys[] = {RM_PS2_TRIANGLE, RM_PS2_CIRCLE, RM_PS2_SQUARE,
+                            RM_PS2_L1, RM_PS2_R1, RM_PS2_CROSS};
+    const char *names[] = {"lift", "shovel", "shoulder", "elbow", "wrist", "gripper"};
+    for (unsigned i = 0; i < 6; ++i) {
+        step(&t, 20, RM_PS2_L2, 0, true);
+        step(&t, 20, (uint16_t)(RM_PS2_L2 | keys[i]), 0, true);
+        CHECK(t.a.selected == i && !t.a.armed);
+        CHECK(!strcmp(rm_arm_channel_name(i), names[i]));
+        arm(&t);
+        CHECK(t.a.armed);
+        if (i == 1) continue; /* S2的上/下有已标定姿态门槛，下面单独检查。 */
+        uint16_t before = t.a.pulse_us[i];
+        step(&t, 20, RM_PS2_L2 | RM_PS2_R2 | RM_PS2_UP, 0, true);
+        CHECK(t.a.pulse_us[i] == before+20);
+        step(&t, 20, RM_PS2_L2 | RM_PS2_R2 | RM_PS2_DOWN, 0, true);
+        CHECK(t.a.pulse_us[i] == before);
+        step(&t, 20, RM_PS2_L2 | RM_PS2_R2 | RM_PS2_UP | RM_PS2_DOWN, 0, true);
+        CHECK(t.a.pulse_us[i] == before);
+        step(&t, 20, RM_PS2_L2 | RM_PS2_R2 | RM_PS2_UP, -1, true);
+        CHECK(t.a.pulse_us[i] == before); /* 按钮与摇杆同时操作冻结。 */
+    }
+    CHECK(!strcmp(rm_arm_channel_name(6), "reserved"));
+    CHECK(!strcmp(rm_arm_channel_name(7), "invalid"));
+    return true;
+}
+
+static bool shovel_calibrated_positions(void)
+{
+    rig_t t;
+    init(&t, 0);
+    arm(&t);
+    step(&t, 20, RM_PS2_L2 | RM_PS2_CIRCLE, 0, true);
+    arm(&t);
+    CHECK(t.a.selected == 1 && t.a.armed);
+    step(&t, 20, RM_PS2_L2 | RM_PS2_R2 | RM_PS2_UP, 0, true);
+    CHECK(t.a.pulse_us[1] == 1500 && t.a.inhibit == RM_ARM_INHIBIT_POSE);
+    CHECK(!rm_arm_shovel_poses_ready(NULL));
+    t.a.config.shovel_poses_verified = true;
+    t.a.config.shovel_scoop_us = 1555;
+    t.a.config.shovel_store_us = 1445;
+    CHECK(rm_arm_shovel_poses_ready(&t.a.config));
+    t.a.config.servo[1].direction = -1; /* 预设是脉宽，不随手动正方向再翻转。 */
+    for (unsigned i = 0; i < 4; ++i) step(&t, 20, RM_PS2_L2 | RM_PS2_R2 | RM_PS2_UP, 0, true);
+    CHECK(t.a.pulse_us[1] == 1555);
+    step(&t, 20, RM_PS2_L2 | RM_PS2_R2 | RM_PS2_DOWN, 0, true);
+    CHECK(t.a.pulse_us[1] == 1535);
+    step(&t, 20, RM_PS2_L2 | RM_PS2_DOWN, 0, true);
+    CHECK(t.a.pulse_us[1] == 1535 && t.a.armed); /* 松R2即冻结，按钮不能自行完成动作。 */
+    for (unsigned i = 0; i < 5; ++i) step(&t, 20, RM_PS2_L2 | RM_PS2_R2 | RM_PS2_DOWN, 0, true);
+    CHECK(t.a.pulse_us[1] == 1445);
+    t.a.config.shovel_scoop_us = 2200;
+    CHECK(!rm_arm_shovel_poses_ready(&t.a.config));
+    step(&t, 20, RM_PS2_L2 | RM_PS2_R2 | RM_PS2_UP, 0, true);
+    CHECK(t.a.pulse_us[1] == 1445 && t.a.inhibit == RM_ARM_INHIBIT_POSE);
+    step(&t, 20, RM_PS2_L2 | RM_PS2_R2, -1, true);
+    CHECK(t.a.pulse_us[1] == 1465); /* 预设缺失时手动微调仍可用。 */
+    t.a.config.shovel_scoop_us = t.a.config.shovel_store_us;
+    CHECK(!rm_arm_shovel_poses_ready(&t.a.config));
     return true;
 }
 
@@ -309,7 +408,10 @@ int main(void)
         {"selection limits and fractional rate",selection_and_limits},{"faults and timer wrap",guards},
         {"chassis interlock and queries",app_and_console},{"input perturbations",perturbations},
         {"mode transition requires separate unlock",mode_reunlock},
-        {"dedicated K210 lift selection",lift_shortcut}};
+        {"dedicated K210 lift selection",lift_shortcut},
+        {"dedicated storage shovel selection",shovel_shortcut},
+        {"joint buttons and START toggle",joint_buttons_and_start_toggle},
+        {"calibrated shovel positions",shovel_calibrated_positions}};
     for(unsigned i=0;i<sizeof groups/sizeof groups[0];++i) {
         if(!groups[i].run())return 1;
         printf("PASS arm %s\n",groups[i].name);

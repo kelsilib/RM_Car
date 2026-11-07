@@ -59,4 +59,32 @@ $pairs = @(
     @('cal pulse 1 -50 200','OK one_pulse_queued')
 )
 foreach ($pair in $pairs) { Assert-Reply ('valid '+$pair[0]) $pair[0] ("reply "+$pair[1]+"`r`n") $true }
+Assert-Reply 'bench status' 'bench' "reply bench built=1 state=0`r`n" $true
+Assert-Reply 'bench on' 'bench on' "reply OK bench state=1`r`n" $true
+Assert-Reply 'bench off' 'bench off' "reply OK bench state=0`r`n" $true
+Assert-Reply 'bench arm' 'bench arm' "reply OK bench state=2`r`n" $true
+Assert-Reply 'bench pulse' 'bench pulse 1 -50 200' "reply OK bench state=3`r`n" $true
+Assert-Reply 'bench dir' 'bench dir 1 -1' "reply OK bench state=1`r`n" $true
+Assert-Reply 'bench drive' 'bench drive' "reply OK bench state=4`r`n" $true
+Assert-Reply 'bench response mismatch' 'bench arm' "reply OK bench state=3`r`n" $false
+Assert-Reply 'bench rejected' 'bench drive' "reply ERR bench_denied`r`n" $false
+Assert-Reply 'bench invalid direction' 'bench dir 1 0' "reply OK bench state=1`r`n" $false
+Assert-Reply 'wheel speed feedback' 'wheels' "reply wheels speed_seen=1 age_ms=2 target_mm_s=50,-50,-50,50 actual_mm_s=49,-50,-48,50`r`n" $true
+Assert-Reply 'wheel speed subscription' 'wheels read' "reply OK query_queued; inspect_feedback_not_ACK`r`n" $true
+Assert-Reply 'wheel feedback mismatch' 'wheels' "reply output mode=pwm M1=0 M2=0 M3=0 M4=0`r`n" $false
+Assert-Reply 'shovel pose query' 'shovel' "reply shovel ready=0 scoop_us=0 store_us=0 pulse_us=0`r`n" $true
+Assert-Reply 'shovel rejects unrelated servo reply' 'shovel' "reply servo channel=2 enabled=0`r`n" $false
+Assert-Reply 'lift pose query' 'poses 1' "reply poses channel=1 ready=0 a_us=0 b_us=0 target_us=0 auto=0`r`n" $true
+Assert-Reply 'pose channel must match' 'poses 6' "reply poses channel=1 ready=0`r`n" $false
+Assert-Reply 'pose invalid channel' 'poses 8' "reply poses channel=8 ready=0`r`n" $false
+Assert-Reply 'single-servo calibration status' 'scal' "reply scal channel=2 ack=0 armed=0`r`n" $true
+Assert-Reply 'single-servo calibration arm' 'scal arm' "reply OK scal accepted; inspect_scal_for_applied_pulse`r`n" $true
+Assert-Reply 'single-servo calibration step' 'scal step -10' "reply OK scal accepted; inspect_scal_for_applied_pulse`r`n" $true
+Assert-Reply 'single-servo calibration result' 'scal result' "reply scal_result channel=2 ready=0`r`n" $true
+Assert-Reply 'single-servo rejected step' 'scal step 1000' "reply ERR scal_denied; inspect_scal_and_calibration_steps`r`n" $false
+Assert-Reply 'single-servo wrong reply' 'scal result' "reply scal channel=2 ack=1`r`n" $false
+Assert-Reply 'S2 manual status' 'shovel' "reply shovel enabled=0 active=0 output=0`r`n" $true
+Assert-Reply 'S2 manual pulse setup' 'shovel pulses 1530 1470' "reply OK shovel pulses_set; START_required`r`n" $true
+Assert-Reply 'S2 manual rejected pulse' 'shovel pulses 1700 1470' "reply ERR shovel_pulses_denied`r`n" $false
+Assert-Reply 'S3 S4 status' 'joints' "reply joints selected=3 active=0 center_required=0 s3_us=0 s4_us=0`r`n" $true
 Write-Host "PASS console reply checks: $script:replyChecks"

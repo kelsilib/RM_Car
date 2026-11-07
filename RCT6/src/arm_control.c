@@ -44,6 +44,23 @@ bool rm_arm_channel_ready(const rm_arm_config_t *c, unsigned channel)
         rm_arm_config_issues(c) == 0 && servo_values_valid(c, channel);
 }
 
+bool rm_arm_shovel_poses_ready(const rm_arm_config_t *c)
+{
+    if (!rm_arm_channel_ready(c, 1) || !c->shovel_poses_verified) return false;
+    const rm_servo_config_t *s = &c->servo[1];
+    return c->shovel_scoop_us >= s->min_us && c->shovel_scoop_us <= s->max_us &&
+        c->shovel_store_us >= s->min_us && c->shovel_store_us <= s->max_us &&
+        c->shovel_scoop_us != c->shovel_store_us;
+}
+
+const char *rm_arm_channel_name(unsigned channel)
+{
+    static const char *const names[RM_SERVOS] = {
+        "lift", "shovel", "shoulder", "elbow", "wrist", "gripper", "reserved"
+    };
+    return channel < RM_SERVOS ? names[channel] : "invalid";
+}
+
 void rm_arm_init(rm_arm_t *a, const rm_arm_config_t *c, uint32_t now)
 {
     memset(a, 0, sizeof *a);
@@ -54,6 +71,7 @@ void rm_arm_init(rm_arm_t *a, const rm_arm_config_t *c, uint32_t now)
 void rm_arm_stop(rm_arm_t *a)
 {
     a->armed = a->neutral_tracking = a->release_seen = false;
+    a->automatic_mask = 0; /* 急停等入口取消正在执行的预设，恢复后不会接着跑旧动作。 */
     a->output_mask = a->applied_mask;
     memcpy(a->pulse_us, a->applied_us, sizeof a->pulse_us);
     memcpy(a->milli_us, a->applied_milli_us, sizeof a->milli_us);
@@ -114,12 +132,30 @@ void rm_arm_step(rm_arm_t *a, const rm_config_t *shared, const rm_remote_t *r,
 
     /* 刚进入L2模式时，已按住的选路键要先松开，底盘许可也需要重新申请。 */
     if (!was_mode) { rm_arm_stop(a); edges = 0; }
+    /* 已启用时再按START就停用。先处理停用，按着R2或摇杆也能停止。 */
+    if (a->armed && rising_start) {
+        rm_arm_stop(a);
+        return;
+    }
     bool deadman = (r->buttons & RM_PS2_R2) != 0;
-    const uint16_t selection_buttons = RM_PS2_LEFT | RM_PS2_RIGHT | RM_PS2_TRIANGLE;
+    const uint16_t selection_buttons = RM_PS2_LEFT | RM_PS2_RIGHT | RM_PS2_TRIANGLE |
+        RM_PS2_CIRCLE | RM_PS2_SQUARE | RM_PS2_L1 | RM_PS2_R1 | RM_PS2_CROSS;
     unsigned select = edges & selection_buttons;
-    if (!deadman && (select == RM_PS2_LEFT || select == RM_PS2_RIGHT || select == RM_PS2_TRIANGLE)) {
+    /* 一次只接受一个选路键，多键同时按下时冻结，避免随机选中另一关节。 */
+    if (!deadman && select && !(select & (select-1u)) &&
+        (r->buttons & selection_buttons) == select) {
         if (select == RM_PS2_TRIANGLE) {
             a->selected = 0; /* △直接选中承载K210的S1升降台，再回中、新按START许可。 */
+        } else if (select == RM_PS2_CIRCLE) {
+            a->selected = 1; /* ○直接选中S2前部储矿铲斗；换路先撤销原来的动作许可。 */
+        } else if (select == RM_PS2_SQUARE) {
+            a->selected = 2; /* □选肩关节。 */
+        } else if (select == RM_PS2_L1) {
+            a->selected = 3; /* L1选肘关节。 */
+        } else if (select == RM_PS2_R1) {
+            a->selected = 4; /* R1选腕关节。 */
+        } else if (select == RM_PS2_CROSS) {
+            a->selected = 5; /* ×选夹爪。 */
         } else {
             a->selected = (uint8_t)((a->selected + (select == RM_PS2_RIGHT ? 1u : RM_SERVOS-1u)) % RM_SERVOS);
         }
@@ -136,7 +172,7 @@ void rm_arm_step(rm_arm_t *a, const rm_config_t *shared, const rm_remote_t *r,
     }
     bool centered = fabsf(r->forward) <= shared->deadzone && fabsf(r->left) <= shared->deadzone &&
         fabsf(r->yaw) <= shared->deadzone && fabsf(r->right_y) <= shared->deadzone &&
-        !deadman && !(r->buttons & selection_buttons);
+        !deadman && !(r->buttons & (selection_buttons | RM_PS2_UP | RM_PS2_DOWN));
     if (!a->armed) {
         if (!centered) a->neutral_tracking = false;
         else if (!a->neutral_tracking) { a->neutral_since = now; a->neutral_tracking = true; }
@@ -158,7 +194,7 @@ void rm_arm_step(rm_arm_t *a, const rm_config_t *shared, const rm_remote_t *r,
         return;
     }
     a->inhibit = 0;
-    if (!deadman || !elapsed) return; /* 松R2只停止调整，保留当前位置和当前路许可。 */
+    if (!deadman || !elapsed || r->arm) return; /* 松R2只停止调整，保留当前位置和当前路许可。 */
     /* 两个选路键一起按、或者推了底盘摇杆时冻结，不把多种操作混成关节动作。 */
     if ((r->buttons & selection_buttons) ||
         fabsf(r->forward) > shared->deadzone || fabsf(r->left) > shared->deadzone ||
@@ -166,8 +202,33 @@ void rm_arm_step(rm_arm_t *a, const rm_config_t *shared, const rm_remote_t *r,
     unsigned i = a->selected;
     const rm_servo_config_t *s = &a->config.servo[i];
     int32_t axis = (int32_t)lroundf(rm_deadzone(r->right_y, shared->deadzone)*1000.0f);
+    unsigned jog = r->buttons & (RM_PS2_UP | RM_PS2_DOWN);
+    int32_t pose_milli_us = 0;
+    if (jog) {
+        /* 摇杆和按钮不能争抢同一路。按钮松开即停，不保存排队的定位动作。 */
+        if (axis || jog == (RM_PS2_UP | RM_PS2_DOWN)) return;
+        if (i == 1) {
+            if (!rm_arm_shovel_poses_ready(&a->config)) {
+                a->inhibit = RM_ARM_INHIBIT_POSE;
+                return;
+            }
+            pose_milli_us = (int32_t)(jog == RM_PS2_UP ? a->config.shovel_scoop_us :
+                                     a->config.shovel_store_us) * 1000;
+            if (pose_milli_us > a->milli_us[i]) axis = 1000;
+            else if (pose_milli_us < a->milli_us[i]) axis = -1000;
+            else axis = 0;
+            /* 预设位置已经是脉宽，后面的direction不能再次翻转它。 */
+            axis *= s->direction;
+        } else {
+            axis = jog == RM_PS2_UP ? 1000 : -1000;
+        }
+    }
     int64_t next = (int64_t)a->milli_us[i] +
         (int64_t)s->max_rate_us_s * elapsed * axis * s->direction / 1000;
+    if (pose_milli_us && ((a->milli_us[i] <= pose_milli_us && next > pose_milli_us) ||
+                         (a->milli_us[i] >= pose_milli_us && next < pose_milli_us))) {
+        next = pose_milli_us; /* 到了铲矿/储矿位就停止，不越过标定点。 */
+    }
     int32_t low = (int32_t)s->min_us * 1000, high = (int32_t)s->max_us * 1000;
     if (next < low) next = low;
     if (next > high) next = high;

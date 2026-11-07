@@ -27,9 +27,10 @@ rm_config_t rm_config_default(void)
         .accel_m_s2 = 0.3f, .accel_rad_s2 = 1.0f,
         /* 每个轮子的轮缘速度上限200mm/s；摇杆中间附近8%的行程当作没推。 */
         .wheel_limit_mm_s = 200.0f, .deadzone = 0.08f,
-        /* 数组依次是左前、右前、左后、右后。暂按M1、M3、M2、M4接线。
+        /* 数组依次是左前、右前、左后、右后。2026-11-05用户最新确认接M4、M3、M2、M1。
+         * 即M1右后、M2左后、M3右前、M4左前；0～3分别表示驱动接口M1～M4。
          * direction的0表示还不知道方向；逐个轮子确认后，分别填+1或-1。 */
-        .channel = {0, 2, 1, 3}, .direction = {0, 0, 0, 0},
+        .channel = {3, 2, 1, 0}, .direction = {0, 0, 0, 0},
         /* 超过200ms没收到正确的手柄包或累计编码器包，就禁止运动。 */
         .remote_timeout_ms = 200, .motor_timeout_ms = 200,
         /* 2026-11-02用户补充确认：SPD是轮缘mm/s，受驱动wdiameter影响，不是轴转速。

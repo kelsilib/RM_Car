@@ -1,3 +1,5 @@
+#include "servo_cal.h"
+#if !RM_SERVO_CAL_CHANNEL
 /**
  * @file main.c
  * @brief 整个程序从这里开始。先准备硬件，再反复“收消息、读手柄、检查、发命令”。
@@ -11,6 +13,10 @@
 #include "console.h"
 #include "firmware_version.h"
 #include <stdio.h>
+
+#if RM_BENCH_TEST && (!RM_PS2_WIRED || (RM_ARM_WIRED && !RM_FIELD_DRIVE))
+#error "Bench firmware requires PS2 enabled and servo interface disabled"
+#endif
 
 /* 时间单位都是毫秒。控制目标是约20ms一次；日志和连接重试不用这么频繁。 */
 enum { CONTROL_MS = 20, DEBUG_MS = 500, RETRY_MS = 500 };
@@ -32,8 +38,11 @@ static bool cancel_calibration_on_console_fault(void)
     if (!board_debug_fault() && !g_console.failed) return false;
     if (!g_console.failed) rm_console_fault(&g_console);
     bool arm_active = g_app.arm.armed || g_app.arm.output_mask != g_app.arm.applied_mask;
+    bool bench_enabled = g_app.bench.state != RM_BENCH_OFF;
+    /* 联调依赖电脑配置和stop入口。电脑通道故障时同时锁住整次联调，复位后重做准备。 */
+    if (bench_enabled) rm_app_transport_fault(&g_app);
     rm_arm_fault(&g_app.arm); /* 撤销新目标并保持上次已写入值；电脑故障后也不能再解锁机械臂。 */
-    if (!arm_active && g_app.safety.state != RM_CALIBRATING && g_app.calibration.state == RM_CAL_OFF) return false;
+    if (!bench_enabled && !arm_active && g_app.safety.state != RM_CALIBRATING && g_app.calibration.state == RM_CAL_OFF) return false;
     rm_app_stop(&g_app);
     return true;
 }
@@ -63,7 +72,7 @@ static void retry_links(uint32_t *motor_retry_at, uint32_t *ps2_retry_at)
      * 不改电机型号、PID或Flash参数；也不把“发出成功”当成“已经连接”。
      * 只有后面真正收到合法MAll包，motor_at_ms才会更新。 */
     if (!motor_fresh && (uint32_t)(now - *motor_retry_at) >= RETRY_MS) {
-        if (!send_motor("$upload:1,0,0#")) return;
+        if (!send_motor(RM_FIELD_DRIVE ? "$upload:1,0,1#" : "$upload:1,0,0#")) return;
         *motor_retry_at = board_millis();
     }
 
@@ -92,7 +101,8 @@ static void poll_console(void)
                              response, sizeof response, &action)) continue;
         const char *request = action == RM_CONSOLE_STOP ? "$pwm:0,0,0,0#" :
             (action == RM_CONSOLE_READ_DRIVER ? "$read_flash#" :
-             (action == RM_CONSOLE_READ_VOLTAGE ? "$read_vol#" : NULL));
+             (action == RM_CONSOLE_READ_VOLTAGE ? "$read_vol#" :
+              (action == RM_CONSOLE_READ_SPEED ? "$upload:1,0,1#" : NULL)));
         if (request && !send_motor(request)) board_debug(RM_CONSOLE_REPLY_PREFIX "ERR motor_uart_send_failed\r\n");
         else board_debug(response);
         /* 刚接受cal pulse也可能没能把回复发回电脑；现在就取消，不等下一轮控制。 */
@@ -118,12 +128,17 @@ int main(void)
 
     /* 3. 查询驱动的已有参数，并请求上传累计编码器数据。
      * 查询只发一次；上传开关如果没生效，下面的重试流程会再发。 */
-    if (send_motor("$read_flash#")) (void)send_motor("$upload:1,0,0#");
+    if (!RM_FIELD_DRIVE && send_motor("$read_flash#")) (void)send_motor("$upload:1,0,0#");
     uint32_t motor_retry_at = board_millis();
 
     /* 4. 尝试读手柄。RM_PS2_WIRED默认是0，此时不会操作PS2引脚。
      * 启用接线后，只有确认读到模拟包，start才返回true；失败可以稍后再试。 */
     if (board_ps2_start()) (void)board_ps2_read(&g_app.remote);
+    /* 行走版在可能耗时的手柄初始化结束后再打开双路反馈，避免启动期间缓存积压。 */
+    if (RM_FIELD_DRIVE) {
+        if (send_motor("$read_flash#")) (void)send_motor("$upload:1,0,1#");
+        motor_retry_at = board_millis();
+    }
     uint32_t ps2_retry_at = board_millis();
     uint32_t control_at = board_millis(), debug_at = control_at;
 
@@ -189,3 +204,4 @@ int main(void)
         }
     }
 }
+#endif /* 普通/比赛主循环，单路标定使用servo_cal_main.c */

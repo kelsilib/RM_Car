@@ -4,6 +4,10 @@
 #include "board_servo.h"
 #include "stm32f1xx_hal.h"
 
+#if RM_SERVO_CAL_CHANNEL && !RM_ARM_WIRED
+#error "Servo calibration requires RM_ARM_WIRED=1"
+#endif
+
 #if RM_ARM_WIRED
 static TIM_HandleTypeDef timer3, timer4;
 static rm_arm_config_t active_config;
@@ -95,6 +99,96 @@ bool board_servo_apply(const uint16_t pulse_us[RM_SERVOS], uint8_t mask)
     held_mask = mask;
     return true;
 }
+#if RM_SERVO_CAL_CHANNEL
+/* 标定使用独立初始化，只把指定的一根GPIO交给PWM，其他舵机信号保持原状态。
+ * 这里没有改动生产config验收项，开放初试窗口由独立构建和操作者确认共同控制。 */
+static bool cal_initialized, cal_held;
+static TIM_HandleTypeDef *cal_timer;
+static uint32_t cal_channel;
+
+bool board_servo_cal_init(void)
+{
+    if (initialized || cal_initialized) return false;
+    const unsigned index = RM_SERVO_CAL_CHANNEL-1u;
+    const uint16_t pins[] = {GPIO_PIN_6,GPIO_PIN_7,GPIO_PIN_0,GPIO_PIN_1,GPIO_PIN_6,GPIO_PIN_7};
+    uint32_t clock = HAL_RCC_GetPCLK1Freq();
+    if (clock != HAL_RCC_GetHCLKFreq()) clock *= 2u;
+    if (clock < 1000000u || clock % 1000000u || clock/1000000u > 65536u) return false;
+    __HAL_RCC_AFIO_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    if (index < 4) {
+        __HAL_RCC_TIM3_CLK_ENABLE();
+        __HAL_AFIO_REMAP_TIM3_DISABLE();
+        cal_timer = &timer3;
+    } else {
+        __HAL_RCC_TIM4_CLK_ENABLE();
+        __HAL_AFIO_REMAP_TIM4_DISABLE();
+        cal_timer = &timer4;
+    }
+    cal_channel = channels[index < 4 ? index : index-4];
+    if (!timer_init(cal_timer,index < 4 ? TIM3 : TIM4,clock/1000000u-1u,
+                    RM_SCAL_PERIOD_US,index < 4 ? 4 : 3)) return false;
+    GPIO_InitTypeDef pin = {0};
+    pin.Pin = pins[index];
+    pin.Mode = GPIO_MODE_AF_PP;
+    pin.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(index < 2 ? GPIOA : GPIOB,&pin);
+    cal_initialized = true;
+    cal_held = false;
+    return true;
+}
+
+bool board_servo_cal_apply(uint16_t pulse_us, bool enabled)
+{
+    if (!enabled) {
+        if (pulse_us) return false;
+#if RM_SHOVEL_CONTROL
+        /* S2专用固件松键时撤销PWM，下个定时器更新后PA7保持低电平。
+         * 只有S2这一根信号，其他承重机构继续使用各自的保持策略。 */
+        if (cal_initialized) __HAL_TIM_SET_COMPARE(cal_timer,cal_channel,0);
+        cal_held = false;
+        return true;
+#else
+        return !cal_held;
+#endif
+    }
+    if (!cal_initialized || pulse_us < RM_SCAL_MIN_US || pulse_us > RM_SCAL_MAX_US) return false;
+    __HAL_TIM_SET_COMPARE(cal_timer,cal_channel,pulse_us);
+    cal_held = true;
+    return true;
+}
+#if RM_ARM_PAIR_CONTROL
+bool board_servo_pair_init(void)
+{
+    if (!board_servo_cal_init()) return false; /* 已启动TIM3，PA7只对应S2。 */
+    GPIO_InitTypeDef pin = {0};
+    pin.Pin = GPIO_PIN_0 | GPIO_PIN_1; /* TIM3_CH3 PB0为S3，CH4 PB1为S4。 */
+    pin.Mode = GPIO_MODE_AF_PP;
+    pin.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(GPIOB,&pin);
+    return true;
+}
+
+bool board_servo_pair_apply(const uint16_t pulse_us[3])
+{
+    if (!cal_initialized || !pulse_us) return false;
+    unsigned active = 0;
+    for (unsigned i=0; i<3; ++i) {
+        if (!pulse_us[i]) continue;
+        if (pulse_us[i] < RM_SCAL_MIN_US || pulse_us[i] > RM_SCAL_MAX_US) return false;
+        ++active;
+    }
+    if (active > 1) return false;
+    /* 比较值有预装载。先写零再写非零，换通道时不会把新目标排在旧目标之前。 */
+    for (unsigned i=0; i<3; ++i)
+        if (!pulse_us[i]) __HAL_TIM_SET_COMPARE(cal_timer,channels[i+1],0);
+    for (unsigned i=0; i<3; ++i)
+        if (pulse_us[i]) __HAL_TIM_SET_COMPARE(cal_timer,channels[i+1],pulse_us[i]);
+    return true;
+}
+#endif
+#endif
 #else
 bool board_servo_init(const rm_arm_config_t *c) { (void)c; return false; }
 bool board_servo_apply(const uint16_t pulse_us[RM_SERVOS], uint8_t mask)

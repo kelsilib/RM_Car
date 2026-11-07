@@ -88,10 +88,18 @@ static bool test_parser(void)
 
 static bool test_mapping_and_commands(void)
 {
+    /* 钉住用户本次确认的默认接线，避免只测数学往返却漏掉左右接反。 */
+    const rm_config_t defaults = rm_config_default();
+    const uint8_t expected_channel[RM_WHEELS] = {3, 2, 1, 0};
+    for (unsigned i = 0; i < RM_WHEELS; ++i) {
+        CHECK(defaults.channel[i] == expected_channel[i]);
+        CHECK(defaults.direction[i] == 0);
+    }
+    CHECK(!defaults.mapping_verified);
     rm_config_t c = fixture();
     int32_t wheel[4] = {10,20,30,40}, channel[4], back[4];
     CHECK(rm_motor_map_command(&c, wheel, channel));
-    CHECK(channel[0]==10 && channel[1]==30 && channel[2]==20 && channel[3]==40);
+    CHECK(channel[0]==40 && channel[1]==30 && channel[2]==20 && channel[3]==10);
     CHECK(rm_motor_unmap_counts(&c, channel, back) && !memcmp(wheel,back,sizeof wheel));
     c.direction[RM_FR] = -1;
     CHECK(rm_motor_map_command(&c,wheel,channel) && channel[2]==-20);
@@ -172,7 +180,7 @@ static bool test_safety(void)
     rm_config_t unverified = rm_config_default();
     CHECK(!rm_config_motion_ready(&unverified));
     c.radius_m = NAN; CHECK(!rm_config_motion_ready(&c)); c=fixture();
-    c.channel[1] = 0; CHECK(!rm_config_motion_ready(&c)); c=fixture();
+    c.channel[1] = c.channel[0]; CHECK(!rm_config_motion_ready(&c)); c=fixture();
     rm_safety_t s; rm_safety_init(&s);
     rm_safety_input_t in = {.remote={.valid=true},.motor_seen=true,
         .transport_ok=true,.scheduler_ok=true};
